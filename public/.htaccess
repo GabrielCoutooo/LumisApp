@@ -1,0 +1,10 @@
+# Reescrever URLs para o front controller
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /LumisApp/public/
+    
+    # Redireciona todas as requisições da API para api.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api.php/$1 [L,QSA]
+</IfModule>

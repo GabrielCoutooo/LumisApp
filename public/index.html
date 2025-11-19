@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumis - Gestão Financeira</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="mobile-container">
+        <!-- ==================== TELA: DASHBOARD ==================== -->
+        <div id="dashboard-screen">
+            <div class="header">
+                <div class="header-greeting">Olá, Teste User</div>
+                <div class="header-title" id="saudacao-dinamica"><i class="fa-solid fa-sun"></i> Boa tarde</div>
+            </div>
+
+            <div class="content">
+                <!-- Card Saldo Total com Toggle de Privacidade -->
+                <div class="saldo-card">
+                    <div class="saldo-header">
+                        <div class="saldo-label">Saldo Total</div>
+                        <button class="privacy-toggle" onclick="toggleVisibilidadeSaldo()" id="btn-privacy"><i
+                                class="fa-solid fa-eye"></i></button>
+                    </div>
+                    <div class="saldo-value" id="saldo-total">Carregando...</div>
+                </div>
+
+                <!-- Resumo Mensal -->
+                <div class="resumo-grid">
+                    <div class="resumo-card">
+                        <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="resumo-label">Receitas</div>
+                        <div class="resumo-value receita" id="receitas-mes">-</div>
+                    </div>
+                    <div class="resumo-card">
+                        <div class="icon"><i class="fa-solid fa-chart-line-down"></i></div>
+                        <div class="resumo-label">Despesas</div>
+                        <div class="resumo-value despesa" id="despesas-mes">-</div>
+                    </div>
+                </div>
+
+                <!-- Orçamentos -->
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-chart-bar"></i> Orçamento do Mês</div>
+                    <div id="orcamentos-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Carregando orçamentos...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximos Pagamentos -->
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Próximos Pagamentos</div>
+                    <div id="pagamentos-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Carregando pagamentos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TELA: EXTRATO ==================== -->
+        <div id="extrato-screen" class="extrato-screen">
+            <div class="header">
+                <div class="header-title">Extrato</div>
+            </div>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filtrarTransacoes('all')">Todas</button>
+                <button class="filter-btn" onclick="filtrarTransacoes('RECEITA')">Receitas</button>
+                <button class="filter-btn" onclick="filtrarTransacoes('DESPESA')">Despesas</button>
+            </div>
+
+            <div id="transacoes-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Carregando transações...
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TELA: REGISTRAR ==================== -->
+        <div id="registrar-screen" class="registrar-screen">
+            <div class="header" style="padding-top: 30px; padding-bottom: 10px;">
+                <div class="header-title"><i class="fa-solid fa-plus"></i> Nova Transação</div>
+            </div>
+
+            <div class="registro-quick-entry">
+                <input id="input-valor-registro" type="number" min="0" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="registro-form">
+                <div class="tipo-transacao-toggle">
+                    <button id="btn-despesa" class="tipo-btn active despesa" onclick="setTipoRegistro('DESPESA')"><i
+                            class="fa-solid fa-minus"></i>
+                        Despesa</button>
+                    <button id="btn-receita" class="tipo-btn" onclick="setTipoRegistro('RECEITA')"><i
+                            class="fa-solid fa-plus"></i>
+                        Receita</button>
+                    <button id="btn-transferencia" class="tipo-btn" onclick="setTipoRegistro('TRANSFERENCIA')"><i
+                            class="fa-solid fa-arrow-right-arrow-left"></i>
+                        Transferência</button>
+                </div>
+
+                <form id="form-transacao">
+                    <input type="hidden" id="registro-tipo" value="DESPESA" />
+
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <input id="input-descricao" class="form-control" type="text"
+                            placeholder="Ex: Café na padaria, Salário Outubro" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Conta</label>
+                        <select id="select-conta-origem" class="form-control" required>
+                            <option value="">Carregando Contas...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="grupo-conta-destino" style="display:none;">
+                        <label>Conta de Destino</label>
+                        <select id="select-conta-destino" class="form-control">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="grupo-categoria">
+                        <label>Categoria</label>
+                        <select id="select-categoria-registro" class="form-control" required>
+                            <option value="">Carregando Categorias...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input id="input-data" class="form-control" type="date" required />
+                    </div>
+
+                    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                        <input id="input-efetuada" type="checkbox" />
+                        <label for="input-efetuada" style="margin:0;">Pagamento já realizado?</label>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top: 10px; padding: 12px;">
+                            Salvar Transação
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== TELA: ORÇAMENTO ==================== -->
+        <div id="orcamento-screen" class="orcamento-screen">
+            <div class="header">
+                <div class="header-actions">
+                    <div class="header-title">Orçamento</div>
+                    <button class="btn-primary" onclick="abrirModalOrcamento()">+ Novo</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="section">
+                    <div class="section-title"><i class="fa-solid fa-chart-bar"></i> Orçamentos do mês</div>
+                    <div id="orcamento-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Carregando orçamentos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TELA: PERFIL ==================== -->
+        <div id="perfil-screen" class="perfil-screen">
+            <div class="header">
+                <div class="header-title">Meu Perfil</div>
+            </div>
+
+            <div class="content perfil-content">
+                <!-- Seção I: Informações Pessoais e Segurança -->
+                <div class="perfil-section">
+                    <div class="perfil-section-title"><i class="fa-solid fa-user-shield"></i> Informações Pessoais e
+                        Segurança</div>
+
+                    <div class="perfil-info-card">
+                        <div class="perfil-info-item">
+                            <label>Nome</label>
+                            <div class="perfil-value" id="perfil-nome">-</div>
+                        </div>
+                        <div class="perfil-info-item">
+                            <label>Email</label>
+                            <div class="perfil-value" id="perfil-email">-</div>
+                        </div>
+                        <div class="perfil-info-item">
+                            <label>Membro desde</label>
+                            <div class="perfil-value" id="perfil-data-registro">-</div>
+                        </div>
+                    </div>
+
+                    <div class="perfil-actions">
+                        <button class="btn-action" onclick="abrirModalEditarPerfil()">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar Nome/Email
+                        </button>
+                        <button class="btn-action" onclick="abrirModalAlterarSenha()">
+                            <i class="fa-solid fa-key"></i> Alterar Senha
+                        </button>
+                        <button class="btn-action btn-danger-outline" onclick="abrirModalExcluirConta()">
+                            <i class="fa-solid fa-trash-can"></i> Excluir Conta
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seção II: Gerenciamento de Dados Mestres -->
+                <div class="perfil-section">
+                    <div class="perfil-section-title"><i class="fa-solid fa-database"></i> Gerenciamento de Dados</div>
+
+                    <div class="perfil-actions">
+                        <button class="btn-action" onclick="abrirModalGerenciarContas()">
+                            <i class="fa-solid fa-wallet"></i> Gerenciar Contas
+                        </button>
+                        <button class="btn-action" onclick="abrirModalGerenciarCategorias()">
+                            <i class="fa-solid fa-tags"></i> Gerenciar Categorias
+                        </button>
+                        <button class="btn-action" onclick="alert('Gerenciar Recorrências em desenvolvimento')">
+                            <i class="fa-solid fa-repeat"></i> Gerenciar Recorrências
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seção III: Configurações do Aplicativo -->
+                <div class="perfil-section">
+                    <div class="perfil-section-title"><i class="fa-solid fa-sliders"></i> Configurações do Aplicativo
+                    </div>
+
+                    <div class="perfil-config-list">
+                        <div class="perfil-config-item">
+                            <div class="config-info">
+                                <div class="config-label">Ocultar Saldo por Padrão</div>
+                                <div class="config-description">Saldo ficará oculto ao abrir o app</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="config-saldo-oculto"
+                                    onchange="salvarConfiguracao('config_saldo_oculto', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="perfil-config-item">
+                            <div class="config-info">
+                                <div class="config-label">Notificações</div>
+                                <div class="config-description">Alertas de orçamento, metas e pagamentos</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="config-notificacoes"
+                                    onchange="salvarConfiguracao('config_notificacoes', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="perfil-config-item">
+                            <div class="config-info">
+                                <div class="config-label">Moeda</div>
+                                <div class="config-description">Moeda utilizada no aplicativo</div>
+                            </div>
+                            <select class="form-control-small" id="config-moeda"
+                                onchange="salvarConfiguracao('config_moeda', this.value)">
+                                <option value="BRL">R$ - Real Brasileiro</option>
+                                <option value="USD">$ - Dólar Americano</option>
+                                <option value="EUR">€ - Euro</option>
+                            </select>
+                        </div>
+
+                        <div class="perfil-config-item">
+                            <div class="config-info">
+                                <div class="config-label">Primeiro Dia do Mês</div>
+                                <div class="config-description">Define o início do mês financeiro</div>
+                            </div>
+                            <select class="form-control-small" id="config-primeiro-dia"
+                                onchange="salvarConfiguracao('config_primeiro_dia_mes', parseInt(this.value))">
+                                <option value="1">Dia 1</option>
+                                <option value="5">Dia 5</option>
+                                <option value="10">Dia 10</option>
+                                <option value="15">Dia 15</option>
+                                <option value="20">Dia 20</option>
+                                <option value="25">Dia 25</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção IV: Ajuda e Suporte -->
+                <div class="perfil-section">
+                    <div class="perfil-section-title"><i class="fa-solid fa-circle-info"></i> Ajuda e Suporte</div>
+
+                    <div class="perfil-actions">
+                        <button class="btn-action" onclick="exportarDados()">
+                            <i class="fa-solid fa-download"></i> Exportar Dados
+                        </button>
+                        <button class="btn-action" onclick="abrirModalSobre()">
+                            <i class="fa-solid fa-circle-question"></i> Sobre o Lumis
+                        </button>
+                    </div>
+
+                    <div class="perfil-version">
+                        <small>Lumis v1.0.0 - © 2025</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== BOTTOM NAVIGATION ==================== -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="mostrarTela('dashboard')">
+                <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
+                <div class="nav-label">Início</div>
+            </div>
+            <div class="nav-item" onclick="mostrarTela('extrato')">
+                <div class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                <div class="nav-label">Extrato</div>
+            </div>
+            <div class="nav-item highlight" onclick="mostrarTela('registrar')">
+                <div class="nav-icon"><i class="fa-solid fa-plus"></i></div>
+                <div class="nav-label">Registrar</div>
+            </div>
+            <div class="nav-item" onclick="mostrarTela('orcamento')">
+                <div class="nav-icon"><i class="fa-solid fa-bullseye"></i></div>
+                <div class="nav-label">Orçamento</div>
+            </div>
+            <div class="nav-item" onclick="mostrarTela('perfil')">
+                <div class="nav-icon"><i class="fa-solid fa-user"></i></div>
+                <div class="nav-label">Perfil</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ORÇAMENTO (Criar/Editar) ==================== -->
+    <div id="orcamento-modal" class="modal-backdrop" onclick="if(event.target===this) fecharModalOrcamento()"
+        data-mode="create">
+        <div class="modal">
+            <div class="modal-header">
+                <span id="orcamento-modal-title">Novo Orçamento</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Categoria (Despesa)</label>
+                    <select id="select-categoria" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Valor Limite (R$)</label>
+                    <input id="input-valor-limite" class="form-control" type="number" min="0" step="0.01"
+                        placeholder="0,00" />
+                </div>
+                <div class="form-group">
+                    <label>Período</label>
+                    <input id="periodo-text" class="form-control" type="text" value="" disabled />
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                    <input id="input-ativo" type="checkbox" checked />
+                    <label for="input-ativo" style="margin:0;">Ativo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalOrcamento()">Cancelar</button>
+                <button class="btn btn-danger" onclick="enviarOrcamento()">Salvar</button>
+            </div>
+            <input id="hidden-id-orcamento" type="hidden" />
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: EDITAR PERFIL ==================== -->
+    <div id="modal-editar-perfil" class="modal-backdrop" onclick="if(event.target===this) fecharModalEditarPerfil()">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Editar Perfil</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input id="input-perfil-nome" class="form-control" type="text" required />
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input id="input-perfil-email" class="form-control" type="email" required />
+                </div>
+                <div class="form-group">
+                    <label>Senha Atual (para confirmar)</label>
+                    <input id="input-perfil-senha-confirmacao" class="form-control" type="password" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalEditarPerfil()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarPerfilEditado()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ALTERAR SENHA ==================== -->
+    <div id="modal-alterar-senha" class="modal-backdrop" onclick="if(event.target===this) fecharModalAlterarSenha()">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Alterar Senha</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Senha Atual</label>
+                    <input id="input-senha-atual" class="form-control" type="password" required />
+                </div>
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input id="input-senha-nova" class="form-control" type="password" required />
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Nova Senha</label>
+                    <input id="input-senha-nova-confirmar" class="form-control" type="password" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalAlterarSenha()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarNovaSenha()">Alterar Senha</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: EXCLUIR CONTA ==================== -->
+    <div id="modal-excluir-conta" class="modal-backdrop" onclick="if(event.target===this) fecharModalExcluirConta()">
+        <div class="modal">
+            <div class="modal-header modal-header-danger">
+                <span>⚠️ Excluir Conta Permanentemente</span>
+            </div>
+            <div class="modal-body">
+                <p style="color: #EF4444; font-weight: 600; margin-bottom: 15px;">
+                    Esta ação é IRREVERSÍVEL! Todos os seus dados serão permanentemente excluídos.
+                </p>
+                <div class="form-group">
+                    <label>Digite sua senha para confirmar</label>
+                    <input id="input-excluir-senha" class="form-control" type="password" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalExcluirConta()">Cancelar</button>
+                <button class="btn btn-danger" onclick="confirmarExclusaoConta()">Excluir Minha Conta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: GERENCIAR CONTAS ==================== -->
+    <div id="modal-gerenciar-contas" class="modal-backdrop"
+        onclick="if(event.target===this) fecharModalGerenciarContas()">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <span>Gerenciar Contas</span>
+            </div>
+            <div class="modal-body">
+                <button class="btn btn-primary" onclick="abrirFormNovaConta()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-plus"></i> Nova Conta
+                </button>
+                <div id="lista-contas-gerenciar">
+                    <div class="loading">
+                        <div class="spinner"></div> Carregando...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalGerenciarContas()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: GERENCIAR CATEGORIAS ==================== -->
+    <div id="modal-gerenciar-categorias" class="modal-backdrop"
+        onclick="if(event.target===this) fecharModalGerenciarCategorias()">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <span>Gerenciar Categorias</span>
+            </div>
+            <div class="modal-body">
+                <button class="btn btn-primary" onclick="abrirFormNovaCategoria()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-plus"></i> Nova Categoria
+                </button>
+                <div id="lista-categorias-gerenciar">
+                    <div class="loading">
+                        <div class="spinner"></div> Carregando...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="fecharModalGerenciarCategorias()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: FORMULÁRIO CATEGORIA ==================== -->
+    <div id="modal-form-categoria" class="modal-backdrop" onclick="if(event.target===this) fecharFormCategoria()">
+        <div class="modal">
+            <div class="modal-header">
+                <span id="categoria-modal-title">Nova Categoria</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hidden-id-categoria" />
+
+                <div class="form-group">
+                    <label>Nome da Categoria</label>
+                    <input id="input-categoria-nome" class="form-control" type="text"
+                        placeholder="Ex: Lazer, Salário, Investimento" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="select-categoria-tipo" class="form-control" required>
+                        <option value="DESPESA">Despesa (Gasto)</option>
+                        <option value="RECEITA">Receita (Ganho)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Ícone/Emoji (Opcional)</label>
+                    <input id="input-categoria-icone" class="form-control" type="text" placeholder="Ex: 🍔, 🏠, 🚀"
+                        maxlength="2" />
+                </div>
+
+                <div class="form-group">
+                    <label>Cor (Opcional - Hex)</label>
+                    <input id="input-categoria-cor" class="form-control" type="color" value="#3B82F6" />
+                </div>
+
+                <div style="padding: 16px 0 0; border-top: none; display: flex; gap: 10px;">
+                    <button class="btn btn-danger-outline" id="btn-deletar-categoria"
+                        onclick="confirmarExclusaoCategoria()" style="flex: 1; display: none;">Excluir</button>
+                    <button class="btn" onclick="fecharFormCategoria()" style="flex: 1;">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarCategoria()" style="flex: 1;">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: SOBRE ==================== -->
+    <div id="modal-sobre" class="modal-backdrop" onclick="if(event.target===this) fecharModalSobre()">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Sobre o Lumis</span>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fa-solid fa-coins" style="font-size: 48px; color: #3B82F6;"></i>
+                    <h2 style="margin: 10px 0; color: #3B82F6;">Lumis</h2>
+                    <p style="color: #6B7280;">Gestão Financeira Inteligente</p>
+                </div>
+                <div style="text-align: left; line-height: 1.8;">
+                    <p><strong>Versão:</strong> 1.0.0</p>
+                    <p><strong>Data de Lançamento:</strong> Novembro 2025</p>
+                    <p style="margin-top: 20px;">
+                        O Lumis é um sistema completo de gestão financeira pessoal,
+                        desenvolvido para ajudar você a controlar suas finanças de forma simples e eficiente.
+                    </p>
+                    <p style="margin-top: 15px; font-size: 12px; color: #6B7280;">
+                        <a href="#" style="color: #3B82F6;">Termos de Uso</a> |
+                        <a href="#" style="color: #3B82F6;">Política de Privacidade</a>
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="fecharModalSobre()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

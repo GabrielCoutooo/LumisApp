@@ -1,0 +1,36 @@
+# Dependências
+/vendor/
+composer.phar
+
+# Configurações locais
+/app/config/database.php
+
+# Logs
+*.log
+/logs/
+
+# Cache
+*.cache
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Uploads (se houver)
+/public/uploads/
+
+# Ambiente
+.env
+.env.local
