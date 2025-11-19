@@ -4,16 +4,16 @@
 
 -- 1. Tabela USUARIO
 CREATE TABLE Usuario (
-    id_usuario SERIAL PRIMARY KEY,
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
-    data_criacao TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. Tabela CONTA
 CREATE TABLE Conta (
-    id_conta SERIAL PRIMARY KEY,
+    id_conta INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     tipo_conta VARCHAR(20) NOT NULL, -- Ex: 'CORRENTE', 'POUPANCA', 'INVESTIMENTO', 'CARTAO_CREDITO', 'DINHEIRO'
@@ -25,7 +25,7 @@ CREATE TABLE Conta (
 
 -- 3. Tabela CATEGORIA
 CREATE TABLE Categoria (
-    id_categoria SERIAL PRIMARY KEY,
+    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT, -- NULL para categorias padrão do sistema
     nome VARCHAR(50) NOT NULL,
     tipo VARCHAR(10) NOT NULL, -- 'RECEITA' ou 'DESPESA'
@@ -36,7 +36,7 @@ CREATE TABLE Categoria (
 
 -- 4. Tabela TRANSACAO (Usamos BIGINT para escalabilidade na chave primária)
 CREATE TABLE Transacao (
-    id_transacao BIGSERIAL PRIMARY KEY,
+    id_transacao BIGINT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     id_conta INT NOT NULL,
     id_categoria INT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE Transacao (
 
 -- 5. Tabela RECORRENCIA
 CREATE TABLE Recorrencia (
-    id_recorrencia SERIAL PRIMARY KEY,
+    id_recorrencia INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     id_conta INT NOT NULL,
     id_categoria INT NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE Recorrencia (
 
 -- 6. Tabela TRANSFERENCIA
 CREATE TABLE Transferencia (
-    id_transferencia SERIAL PRIMARY KEY,
+    id_transferencia INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     id_conta_origem INT NOT NULL,
     id_conta_destino INT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE Transferencia (
 
 -- 7. Tabela ORCAMENTO
 CREATE TABLE Orcamento (
-    id_orcamento SERIAL PRIMARY KEY,
+    id_orcamento INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     id_categoria INT NOT NULL,
     valor_limite DECIMAL(10, 2) NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE Orcamento (
 
 -- 8. Tabela METAFINANCEIRA
 CREATE TABLE MetaFinanceira (
-    id_meta SERIAL PRIMARY KEY,
+    id_meta INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     valor_alvo DECIMAL(10, 2) NOT NULL,

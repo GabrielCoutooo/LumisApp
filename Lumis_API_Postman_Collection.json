@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "Lumis API",
+    "description": "Coleção completa de testes para a API Lumis",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teste@lumis.com\",\n  \"senha\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contas",
+      "item": [
+        {
+          "name": "Listar Contas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/contas?id_usuario=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "contas"],
+              "query": [
+                {
+                  "key": "id_usuario",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar Conta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 1,\n  \"nome\": \"Conta Corrente Itaú\",\n  \"tipo_conta\": \"CORRENTE\",\n  \"saldo_inicial\": 2500.00,\n  \"exibir_no_dashboard\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/contas",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "contas"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transações",
+      "item": [
+        {
+          "name": "Criar Transação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 1,\n  \"id_conta\": 1,\n  \"id_categoria\": 1,\n  \"valor\": 150.00,\n  \"tipo_movimentacao\": \"DESPESA\",\n  \"data_transacao\": \"2025-11-18\",\n  \"descricao\": \"Supermercado\",\n  \"efetuada\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/transacoes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "transacoes"]
+            }
+          }
+        },
+        {
+          "name": "Ver Extrato",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/extrato?id_usuario=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "extrato"],
+              "query": [
+                {
+                  "key": "id_usuario",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orçamento",
+      "item": [
+        {
+          "name": "Listar Orçamentos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/orcamento?id_usuario=1&mes_ano=2025-11",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "orcamento"],
+              "query": [
+                {
+                  "key": "id_usuario",
+                  "value": "1"
+                },
+                {
+                  "key": "mes_ano",
+                  "value": "2025-11"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar Orçamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 1,\n  \"id_categoria\": 1,\n  \"valor_limite\": 500.00,\n  \"data_inicio\": \"2025-11-01\",\n  \"data_fim\": \"2025-11-30\",\n  \"ativo\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/orcamento",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "orcamento"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Relatórios",
+      "item": [
+        {
+          "name": "Gastos por Categoria",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/index.php/api/relatorios/gastos-categoria?id_usuario=1&mes_ano=2025-11",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["index.php", "api", "relatorios", "gastos-categoria"],
+              "query": [
+                {
+                  "key": "id_usuario",
+                  "value": "1"
+                },
+                {
+                  "key": "mes_ano",
+                  "value": "2025-11"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

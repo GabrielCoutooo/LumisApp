@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumis - Gestão Financeira</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F3F4F6;
+            color: #1F2937;
+        }
+
+        /* Container Mobile */
+        .mobile-container {
+            max-width: 428px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            padding: 50px 20px 30px;
+            color: white;
+        }
+
+        .header-greeting {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* Card Saldo Total */
+        .saldo-card {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            border-radius: 20px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+            margin-top: -40px;
+            position: relative;
+        }
+
+        .saldo-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .saldo-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Grid Resumo */
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .resumo-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .resumo-card .icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .resumo-label {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        .resumo-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .receita {
+            color: #10B981;
+        }
+
+        .despesa {
+            color: #EF4444;
+        }
+
+        /* Section */
+        .section {
+            margin-top: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Orçamento Card */
+        .orcamento-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .orcamento-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .categoria-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .orcamento-values {
+            font-size: 12px;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #F3F4F6;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Pagamentos Card */
+        .pagamento-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .pagamento-info {
+            flex: 1;
+        }
+
+        .pagamento-desc {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .pagamento-data {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+
+        .pagamento-valor {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 428px;
+            width: 100%;
+            background: white;
+            border-top: 1px solid #F3F4F6;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover {
+            background: #F3F4F6;
+        }
+
+        .nav-item.active {
+            color: #3B82F6;
+        }
+
+        .nav-item.highlight {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Tela Extrato */
+        .extrato-screen {
+            display: none;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #E5E7EB;
+            background: white;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            border-color: #3B82F6;
+            color: #3B82F6;
+            background: #DBEAFE;
+        }
+
+        .transacao-item {
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .transacao-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: linear-gradient(135deg, #DBEAFE 0%, #EDE9FE 100%);
+        }
+
+        .transacao-info {
+            flex: 1;
+        }
+
+        .transacao-desc {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .transacao-categoria {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+
+        .transacao-data {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+
+        .transacao-valor {
+            font-weight: 700;
+            font-size: 16px;
+            text-align: right;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6B7280;
+        }
+
+        .spinner {
+            border: 3px solid #F3F4F6;
+            border-top: 3px solid #3B82F6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6B7280;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <!-- TELA: DASHBOARD -->
+        <div id="dashboard-screen">
+            <div class="header">
+                <div class="header-greeting">Olá, Teste User</div>
+                <div class="header-title">☀️ Boa tarde</div>
+            </div>
+
+            <div class="content">
+                <!-- Card Saldo Total -->
+                <div class="saldo-card">
+                    <div class="saldo-label">Saldo Total</div>
+                    <div class="saldo-value" id="saldo-total">Carregando...</div>
+                </div>
+
+                <!-- Resumo Mensal -->
+                <div class="resumo-grid">
+                    <div class="resumo-card">
+                        <div class="icon">📈</div>
+                        <div class="resumo-label">Receitas</div>
+                        <div class="resumo-value receita" id="receitas-mes">-</div>
+                    </div>
+                    <div class="resumo-card">
+                        <div class="icon">📉</div>
+                        <div class="resumo-label">Despesas</div>
+                        <div class="resumo-value despesa" id="despesas-mes">-</div>
+                    </div>
+                </div>
+
+                <!-- Orçamentos -->
+                <div class="section">
+                    <div class="section-title">📊 Orçamento do Mês</div>
+                    <div id="orcamentos-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Carregando orçamentos...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximos Pagamentos -->
+                <div class="section">
+                    <div class="section-title">📅 Próximos Pagamentos</div>
+                    <div id="pagamentos-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Carregando pagamentos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA: EXTRATO -->
+        <div id="extrato-screen" class="extrato-screen">
+            <div class="header">
+                <div class="header-title">Extrato</div>
+            </div>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterTransacoes('all')">Todas</button>
+                <button class="filter-btn" onclick="filterTransacoes('RECEITA')">Receitas</button>
+                <button class="filter-btn" onclick="filterTransacoes('DESPESA')">Despesas</button>
+            </div>
+
+            <div id="transacoes-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Carregando transações...
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="showScreen('dashboard')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Início</div>
+            </div>
+            <div class="nav-item" onclick="showScreen('extrato')">
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">Extrato</div>
+            </div>
+            <div class="nav-item highlight" onclick="alert('Modal de registro em desenvolvimento')">
+                <div class="nav-icon">➕</div>
+                <div class="nav-label">Registrar</div>
+            </div>
+            <div class="nav-item" onclick="alert('Tela de orçamento em desenvolvimento')">
+                <div class="nav-icon">🎯</div>
+                <div class="nav-label">Orçamento</div>
+            </div>
+            <div class="nav-item" onclick="alert('Tela de perfil em desenvolvimento')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Perfil</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        const API_BASE = 'http://localhost/LumisApp/api/index.php/api';
+        const USER_ID = 1;
+        const MES_ANO = '2025-11';
+
+        let allTransacoes = [];
+        let currentFilter = 'all';
+
+        // Formatar moeda
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        // Formatar data
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+
+        // Obter cor por percentual
+        function getColorByPercentage(percentage) {
+            if (percentage >= 0 && percentage <= 60) return '#3B82F6';
+            if (percentage > 60 && percentage <= 85) return '#F59E0B';
+            return '#EF4444';
+        }
+
+        // Carregar Dashboard
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard?id_usuario=${USER_ID}&mes_ano=${MES_ANO}`);
+                const data = await response.json();
+
+                // Saldo Total
+                document.getElementById('saldo-total').textContent = formatCurrency(data.saldo_total || 0);
+
+                // Receitas e Despesas
+                document.getElementById('receitas-mes').textContent = formatCurrency(data.receitas_mes || 0);
+                document.getElementById('despesas-mes').textContent = formatCurrency(data.despesas_mes || 0);
+
+                // Orçamentos
+                renderOrcamentos(data.orcamentos || []);
+
+                // Próximos Pagamentos
+                renderPagamentos(data.proximos_pagamentos || []);
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                document.getElementById('saldo-total').textContent = 'Erro ao carregar';
+            }
+        }
+
+        // Renderizar Orçamentos
+        function renderOrcamentos(orcamentos) {
+            const container = document.getElementById('orcamentos-list');
+
+            if (orcamentos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>Nenhum orçamento cadastrado</div></div>';
+                return;
+            }
+
+            container.innerHTML = orcamentos.map(orc => {
+                const percentage = parseFloat(orc.percentual_gasto || 0);
+                const color = getColorByPercentage(percentage);
+                const gasto = parseFloat(orc.gasto_atual || 0);
+                const limite = parseFloat(orc.valor_limite || 0);
+                const restante = limite - gasto;
+
+                return `
+                    <div class="orcamento-card">
+                        <div class="orcamento-header">
+                            <div class="categoria-name">${orc.categoria}</div>
+                            <div class="progress-text" style="color: ${color}">${percentage.toFixed(0)}%</div>
+                        </div>
+                        <div class="orcamento-values">
+                            ${formatCurrency(gasto)} de ${formatCurrency(limite)}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${Math.min(percentage, 100)}%; background: ${color}"></div>
+                        </div>
+                        <div class="progress-text" style="color: ${color}">
+                            ${restante >= 0 ? `Restam ${formatCurrency(restante)}` : `Excedeu em ${formatCurrency(Math.abs(restante))}`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Renderizar Próximos Pagamentos
+        function renderPagamentos(pagamentos) {
+            const container = document.getElementById('pagamentos-list');
+
+            if (pagamentos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div>Nenhum pagamento pendente</div></div>';
+                return;
+            }
+
+            container.innerHTML = pagamentos.map(pag => `
+                <div class="pagamento-item">
+                    <div class="pagamento-info">
+                        <div class="pagamento-desc">${pag.descricao}</div>
+                        <div class="pagamento-data">${formatDate(pag.data_transacao)}</div>
+                    </div>
+                    <div class="pagamento-valor despesa">${formatCurrency(pag.valor)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Carregar Extrato
+        async function loadExtrato() {
+            try {
+                const response = await fetch(`${API_BASE}/extrato?id_usuario=${USER_ID}`);
+                const data = await response.json();
+                allTransacoes = data;
+                renderTransacoes(data);
+            } catch (error) {
+                console.error('Erro ao carregar extrato:', error);
+                document.getElementById('transacoes-list').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div>Erro ao carregar transações</div></div>';
+            }
+        }
+
+        // Renderizar Transações
+        function renderTransacoes(transacoes) {
+            const container = document.getElementById('transacoes-list');
+
+            if (transacoes.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div>Nenhuma transação encontrada</div></div>';
+                return;
+            }
+
+            container.innerHTML = transacoes.map(trans => {
+                const isReceita = trans.tipo_movimentacao === 'RECEITA';
+                const icon = isReceita ? '💰' : '🛒';
+                const colorClass = isReceita ? 'receita' : 'despesa';
+                const prefix = isReceita ? '+' : '-';
+
+                return `
+                    <div class="transacao-item">
+                        <div class="transacao-icon">${icon}</div>
+                        <div class="transacao-info">
+                            <div class="transacao-desc">${trans.descricao}</div>
+                            <div class="transacao-categoria">${trans.categoria || 'Sem categoria'}</div>
+                            <div class="transacao-data">${formatDate(trans.data_transacao)}</div>
+                        </div>
+                        <div class="transacao-valor ${colorClass}">
+                            ${prefix} ${formatCurrency(trans.valor)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filtrar Transações
+        function filterTransacoes(tipo) {
+            currentFilter = tipo;
+
+            // Atualizar botões
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filtrar dados
+            let filtered = allTransacoes;
+            if (tipo !== 'all') {
+                filtered = allTransacoes.filter(t => t.tipo_movimentacao === tipo);
+            }
+
+            renderTransacoes(filtered);
+        }
+
+        // Trocar de tela
+        function showScreen(screen) {
+            // Esconder todas as telas
+            document.getElementById('dashboard-screen').style.display = 'none';
+            document.getElementById('extrato-screen').style.display = 'none';
+
+            // Remover active de todos os nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Mostrar tela selecionada
+            if (screen === 'dashboard') {
+                document.getElementById('dashboard-screen').style.display = 'block';
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+                loadDashboard();
+            } else if (screen === 'extrato') {
+                document.getElementById('extrato-screen').style.display = 'block';
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                loadExtrato();
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+    </script>
+</body>
+
+</html>
