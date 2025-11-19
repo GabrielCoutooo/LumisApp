@@ -30,4 +30,39 @@ class ContaRepository
         $stmt->execute();
         return $this->db->lastInsertId();
     }
+
+    public function update($data)
+    {
+        $sql = 'UPDATE Conta SET nome = :nome, tipo_conta = :tipo_conta';
+
+        if (isset($data['saldo_inicial'])) {
+            $sql .= ', saldo_inicial = :saldo_inicial';
+        }
+        if (isset($data['exibir_no_dashboard'])) {
+            $sql .= ', exibir_no_dashboard = :exibir_no_dashboard';
+        }
+
+        $sql .= ' WHERE id_conta = :id_conta';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_conta', $data['id_conta']);
+        $stmt->bindParam(':nome', $data['nome']);
+        $stmt->bindParam(':tipo_conta', $data['tipo_conta']);
+
+        if (isset($data['saldo_inicial'])) {
+            $stmt->bindParam(':saldo_inicial', $data['saldo_inicial']);
+        }
+        if (isset($data['exibir_no_dashboard'])) {
+            $stmt->bindParam(':exibir_no_dashboard', $data['exibir_no_dashboard']);
+        }
+
+        return $stmt->execute();
+    }
+
+    public function delete($id_conta)
+    {
+        $stmt = $this->db->prepare('DELETE FROM Conta WHERE id_conta = :id_conta');
+        $stmt->bindParam(':id_conta', $id_conta);
+        return $stmt->execute();
+    }
 }

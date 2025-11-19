@@ -33,4 +33,27 @@ class OrcamentoRepository
         $stmt->execute();
         return $this->db->lastInsertId();
     }
+
+    public function atualizar($id_orcamento, $fields)
+    {
+        $allowed = ['valor_limite', 'data_inicio', 'data_fim', 'ativo', 'id_categoria'];
+        $setParts = [];
+        $params = [':id_orcamento' => $id_orcamento];
+        foreach ($fields as $k => $v) {
+            if (in_array($k, $allowed, true)) {
+                $param = ':' . $k;
+                $setParts[] = "$k = $param";
+                $params[$param] = $v;
+            }
+        }
+        if (empty($setParts)) {
+            return false;
+        }
+        $sql = 'UPDATE Orcamento SET ' . implode(', ', $setParts) . ' WHERE id_orcamento = :id_orcamento';
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $p => $v) {
+            $stmt->bindValue($p, $v);
+        }
+        return $stmt->execute();
+    }
 }

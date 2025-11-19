@@ -39,4 +39,34 @@ class CategoriaRepository
         $stmt->execute();
         return $this->db->lastInsertId();
     }
+
+    public function update($data)
+    {
+        $sql = 'UPDATE Categoria SET nome = :nome, tipo = :tipo, cor_hex = :cor_hex';
+
+        if (isset($data['icone'])) {
+            $sql .= ', icone = :icone';
+        }
+
+        $sql .= ' WHERE id_categoria = :id_categoria';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_categoria', $data['id_categoria']);
+        $stmt->bindParam(':nome', $data['nome']);
+        $stmt->bindParam(':tipo', $data['tipo']);
+        $stmt->bindParam(':cor_hex', $data['cor_hex']);
+
+        if (isset($data['icone'])) {
+            $stmt->bindParam(':icone', $data['icone']);
+        }
+
+        return $stmt->execute();
+    }
+
+    public function delete($id_categoria)
+    {
+        $stmt = $this->db->prepare('DELETE FROM Categoria WHERE id_categoria = :id_categoria');
+        $stmt->bindParam(':id_categoria', $id_categoria);
+        return $stmt->execute();
+    }
 }

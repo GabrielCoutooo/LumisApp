@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../repositories/ContaRepository.php';
 require_once __DIR__ . '/../repositories/TransacaoRepository.php';
 require_once __DIR__ . '/../repositories/OrcamentoRepository.php';
+require_once __DIR__ . '/SaldoService.php';
 
 class DashboardService
 {
@@ -10,6 +11,7 @@ class DashboardService
     private $transacaoRepo;
     private $orcamentoRepo;
     private $db;
+    private $saldoService;
 
     public function __construct()
     {
@@ -18,6 +20,7 @@ class DashboardService
         $this->orcamentoRepo = new OrcamentoRepository();
         $database = new Database();
         $this->db = $database->getConnection();
+        $this->saldoService = new SaldoService();
     }
 
     public function getDashboardData($id_usuario, $mes_ano)
@@ -42,7 +45,9 @@ class DashboardService
 
         return [
             'saldo_total' => $saldoTotal,
+            // Mantém chave antiga e adiciona alias esperado pelo protótipo
             'gastos_mes' => $gastosMes,
+            'despesas_mes' => $gastosMes,
             'receitas_mes' => $receitasMes,
             'saldo_mes' => $receitasMes - $gastosMes,
             'orcamentos' => $orcamentosVsGastos,
@@ -137,25 +142,28 @@ class DashboardService
 
     private function getContasComSaldo($id_usuario)
     {
-        $sql = 'SELECT 
-                    c.id_conta,
-                    c.nome,
-                    c.tipo_conta,
-                    c.saldo_inicial,
-                    COALESCE(
-                        c.saldo_inicial + 
-                        (SELECT COALESCE(SUM(CASE WHEN tipo_movimentacao = "RECEITA" THEN valor ELSE -valor END), 0)
-                         FROM Transacao WHERE id_conta = c.id_conta AND efetuada = 1),
-                        c.saldo_inicial
-                    ) as saldo_atual
-                FROM Conta c
-                WHERE c.id_usuario = :id_usuario
-                AND c.exibir_no_dashboard = 1
-                ORDER BY c.tipo_conta, c.nome';
-
-        $stmt = $this->db->prepare($sql);
+        // Busca contas exibidas no dashboard
+        $sqlContas = 'SELECT c.id_conta, c.nome, c.tipo_conta, c.saldo_inicial
+                      FROM Conta c
+                      WHERE c.id_usuario = :id_usuario AND c.exibir_no_dashboard = 1
+                      ORDER BY c.tipo_conta, c.nome';
+        $stmt = $this->db->prepare($sqlContas);
         $stmt->bindParam(':id_usuario', $id_usuario);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $contas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calcula saldo atual (A) e projetado (B) até o fim do mês atual de mes_ano
+        $resultado = [];
+        foreach ($contas as $c) {
+            $saldoAtual = $this->saldoService->calcularSaldoAtualConta($c['id_conta']);
+            $resultado[] = [
+                'id_conta' => (int)$c['id_conta'],
+                'nome' => $c['nome'],
+                'tipo_conta' => $c['tipo_conta'],
+                'saldo_inicial' => (float)$c['saldo_inicial'],
+                'saldo_atual' => $saldoAtual
+            ];
+        }
+        return $resultado;
     }
 }
