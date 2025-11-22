@@ -51,6 +51,7 @@ CREATE TABLE Transacao (
     data_transacao DATE NOT NULL,
     descricao VARCHAR(255),
     efetuada BOOLEAN DEFAULT TRUE, -- TRUE para transações concluídas, FALSE para pendentes
+    recorrente BOOLEAN DEFAULT FALSE, -- TRUE para recorrente, FALSE para não recorrente
     
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_conta) REFERENCES Conta(id_conta) ON DELETE RESTRICT, -- RESTRICT para evitar apagar conta com transações
@@ -115,6 +116,16 @@ CREATE TABLE MetaFinanceira (
     data_alvo DATE,
     status VARCHAR(20) NOT NULL, -- Ex: 'ATIVA', 'PAUSADA', 'CONCLUIDA'
     
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- 9. Tabela RECORRENCIA_LOG
+CREATE TABLE recorrencia_log (
+    id_log INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NOT NULL,
+    mes_ano VARCHAR(7) NOT NULL, -- '2025-12'
+    data_geracao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_usuario_mes (id_usuario, mes_ano),
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
 );
 

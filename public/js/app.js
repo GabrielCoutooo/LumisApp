@@ -3,7 +3,7 @@
 // Configuração da API
 const BASE_API = "http://localhost/LumisApp/public/api.php/api";
 const ID_USUARIO = 1;
-const MES_ANO = "2025-11";
+let MES_ANO = new Date().toISOString().slice(0, 7); // Mês atual dinâmico (YYYY-MM)
 
 let todasTransacoes = [];
 let filtroAtual = "all";
@@ -51,6 +51,19 @@ function formatarData(dataStr) {
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
+function mostrarNotificacao(tipo, titulo, mensagem) {
+  // Notificação simples usando alert
+  // tipo: 'success', 'danger', 'warning', 'info'
+  const icones = {
+    success: "✅",
+    danger: "❌",
+    warning: "⚠️",
+    info: "ℹ️",
+  };
+  const icone = icones[tipo] || "ℹ️";
+  alert(`${icone} ${titulo}\n${mensagem}`);
+}
+
 function corPorPercentual(percentual) {
   if (percentual >= 0 && percentual <= 60) return "#2ecc71";
   if (percentual > 60 && percentual <= 85) return "#F59E0B";
@@ -65,64 +78,82 @@ function intervaloDoMes(mesAno) {
   return { inicio: toISO(first), fim: toISO(last) };
 }
 
-// ==================== SISTEMA DE NOTIFICAÇÕES ====================
+function formatarMesAno(mesAno) {
+  const [y, m] = mesAno.split("-");
+  const meses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  return `${meses[parseInt(m) - 1]} ${y}`;
+}
 
-function mostrarNotificacao(tipo, titulo, mensagem, duracao = 5000) {
-  const container = document.getElementById("toast-container");
-  const toast = document.createElement("div");
-  toast.className = `toast ${tipo}`;
-
-  const icones = {
-    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
-    danger: '<i class="fa-solid fa-circle-exclamation"></i>',
-    success: '<i class="fa-solid fa-circle-check"></i>',
-    info: '<i class="fa-solid fa-circle-info"></i>',
-  };
-
-  toast.innerHTML = `
-        <div class="toast-icon">${icones[tipo] || icones.info}</div>
-        <div class="toast-content">
-            <div class="toast-title">${titulo}</div>
-            <div class="toast-message">${mensagem}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-    `;
-
-  container.appendChild(toast);
-
-  if (duracao > 0) {
-    setTimeout(() => {
-      toast.style.animation = "slideIn 0.3s ease-out reverse";
-      setTimeout(() => toast.remove(), 300);
-    }, duracao);
+function navegarMes(direcao) {
+  const [y, m] = MES_ANO.split("-").map(Number);
+  const data = new Date(y, m - 1, 1);
+  data.setMonth(data.getMonth() + direcao);
+  MES_ANO = data.toISOString().slice(0, 7);
+  atualizarTituloMes();
+  const telaAtiva = document.querySelector(
+    '[id$="-screen"]:not([style*="display: none"])'
+  );
+  if (telaAtiva) {
+    const telaId = telaAtiva.id.replace("-screen", "");
+    if (telaId === "dashboard") carregarDashboard();
+    else if (telaId === "extrato") carregarExtrato();
+    else if (telaId === "orcamento") carregarOrcamento();
   }
 }
 
-function processarAlertaOrcamento(alerta) {
-  if (!alerta) return;
-
-  if (alerta.tipo === "ESTOURO_ORCAMENTO") {
-    mostrarNotificacao("danger", "Orçamento Estourado!", alerta.mensagem, 8000);
-  } else if (alerta.tipo === "ALERTA_ORCAMENTO") {
-    mostrarNotificacao(
-      "warning",
-      "Atenção ao Orçamento",
-      alerta.mensagem,
-      6000
-    );
+function voltarMesAtual() {
+  MES_ANO = new Date().toISOString().slice(0, 7);
+  atualizarTituloMes();
+  const telaAtiva = document.querySelector(
+    '[id$="-screen"]:not([style*="display: none"])'
+  );
+  if (telaAtiva) {
+    const telaId = telaAtiva.id.replace("-screen", "");
+    if (telaId === "dashboard") carregarDashboard();
+    else if (telaId === "extrato") carregarExtrato();
+    else if (telaId === "orcamento") carregarOrcamento();
   }
 }
 
-function processarAlertaMeta(alerta) {
-  if (!alerta) return;
+function atualizarTituloMes() {
+  const mesFormatado = formatarMesAno(MES_ANO);
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const ehMesAtual = MES_ANO === mesAtual;
 
-  if (alerta.tipo === "META_CONCLUIDA") {
-    mostrarNotificacao("success", "Meta Concluída!", alerta.mensagem, 10000);
-  } else if (alerta.tipo === "META_PROXIMA") {
-    mostrarNotificacao("info", "Quase lá!", alerta.mensagem, 7000);
-  }
+  // Atualizar todos os títulos de mês
+  [
+    "titulo-mes-atual",
+    "titulo-mes-atual-extrato",
+    "titulo-mes-atual-orcamento",
+  ].forEach((id) => {
+    const elemento = document.getElementById(id);
+    if (elemento) elemento.textContent = mesFormatado;
+  });
+
+  // Atualizar botões "Hoje"
+  ["btn-mes-atual", "btn-mes-atual-extrato", "btn-mes-atual-orcamento"].forEach(
+    (id) => {
+      const btn = document.getElementById(id);
+      if (btn) btn.style.display = ehMesAtual ? "none" : "inline-block";
+    }
+  );
 }
 
+window.navegarMes = navegarMes;
+window.voltarMesAtual = voltarMesAtual;
 // ==================== PRIVACIDADE ====================
 
 function toggleVisibilidadeSaldo() {
@@ -157,6 +188,8 @@ async function carregarDashboardSaldo() {
 
 async function carregarDashboard() {
   try {
+    atualizarTituloMes();
+
     const resposta = await fetch(
       `${BASE_API}/dashboard?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
     );
@@ -172,10 +205,33 @@ async function carregarDashboard() {
       dados.despesas_mes || 0
     );
 
+    // Mostrar aviso se houver pagamentos pendentes (recorrências não efetuadas)
+    // O backend já retorna apenas pendentes do mês atual (mes_ano)
+    const pendentes = dados.proximos_pagamentos || [];
+    const saldoCard = document.querySelector(".saldo-card");
+    const avisoExistente = document.getElementById("aviso-pendentes");
+
+    // Remover aviso antigo se existir
+    if (avisoExistente) {
+      avisoExistente.remove();
+    }
+
+    // Criar novo aviso apenas se houver pendentes
+    if (pendentes.length > 0) {
+      const aviso = document.createElement("div");
+      aviso.id = "aviso-pendentes";
+      aviso.style.cssText =
+        "background:#FEF3C7;color:#92400E;padding:8px 12px;border-radius:8px;font-size:12px;margin-top:8px;text-align:center;";
+      const qtd = pendentes.length;
+      const textoTransacao =
+        qtd === 1 ? "transação pendente" : "transações pendentes";
+      aviso.innerHTML = `⚠️ Você tem ${qtd} ${textoTransacao} neste mês. Marque como efetuada para atualizar o saldo.`;
+      saldoCard.appendChild(aviso);
+    }
+
     renderizarOrcamentos(dados.orcamentos || []);
     renderizarPagamentos(dados.proximos_pagamentos || []);
   } catch (error) {
-    console.error("Erro ao carregar dashboard:", error);
     document.getElementById("saldo-total").textContent = "Erro ao carregar";
   }
 }
@@ -242,16 +298,18 @@ function renderizarPagamentos(pagamentos) {
   container.innerHTML = pagamentos
     .map(
       (pag) => `
-        <div class="pagamento-item">
+        <div class="pagamento-item" style="cursor:pointer;" onclick="marcarComoEfetuada(${
+          pag.id_transacao
+        })">
             <div class="pagamento-info">
                 <div class="pagamento-desc">${pag.descricao}</div>
                 <div class="pagamento-data">${formatarData(
                   pag.data_transacao
                 )}</div>
             </div>
-            <div class="pagamento-valor despesa">${formatarMoeda(
-              pag.valor
-            )}</div>
+            <div class="pagamento-valor ${
+              pag.tipo_movimentacao === "RECEITA" ? "receita" : "despesa"
+            }">${formatarMoeda(pag.valor)}</div>
         </div>
     `
     )
@@ -262,17 +320,45 @@ function renderizarPagamentos(pagamentos) {
 
 async function carregarExtrato() {
   try {
+    const { inicio, fim } = intervaloDoMes(MES_ANO);
     const resposta = await fetch(
-      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}`
+      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
     );
     const dados = await resposta.json();
+
+    // Atualizar todas as transações do mês atual
     todasTransacoes = dados;
-    renderizarTransacoes(dados);
+
+    // Aplicar filtro atual
+    aplicarFiltroAtual();
+    atualizarTituloMes();
   } catch (error) {
-    console.error("Erro ao carregar extrato:", error);
     document.getElementById("transacoes-list").innerHTML =
       '<div class="empty-state"><div class="empty-icon">❌</div><div>Erro ao carregar transações</div></div>';
   }
+}
+
+function aplicarFiltroAtual() {
+  let transacoesParaExibir = todasTransacoes;
+
+  if (filtroAtual && filtroAtual !== "all") {
+    transacoesParaExibir = todasTransacoes.filter(
+      (t) => t.tipo_movimentacao === filtroAtual
+    );
+  }
+
+  renderizarTransacoes(transacoesParaExibir);
+  atualizarBotoesFiltro();
+}
+
+function atualizarBotoesFiltro() {
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.classList.remove("active");
+    const btnFiltro = btn.getAttribute("onclick");
+    if (btnFiltro && btnFiltro.includes(`'${filtroAtual}'`)) {
+      btn.classList.add("active");
+    }
+  });
 }
 
 function renderizarTransacoes(transacoes) {
@@ -314,18 +400,7 @@ function renderizarTransacoes(transacoes) {
 
 function filtrarTransacoes(tipo) {
   filtroAtual = tipo;
-
-  document.querySelectorAll(".filter-btn").forEach((btn) => {
-    btn.classList.remove("active");
-  });
-  event.target.classList.add("active");
-
-  let filtradas = todasTransacoes;
-  if (tipo !== "all") {
-    filtradas = todasTransacoes.filter((t) => t.tipo_movimentacao === tipo);
-  }
-
-  renderizarTransacoes(filtradas);
+  aplicarFiltroAtual();
 }
 
 // ==================== ORÇAMENTO ====================
@@ -340,11 +415,19 @@ async function carregarCategoriasDespesa() {
 
 async function carregarOrcamento() {
   try {
+    // Buscar orçamentos do mês
     const resposta = await fetch(
       `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
     );
     const orcamentos = await resposta.json();
     orcamentosAtuais = orcamentos || [];
+
+    // Buscar todas as categorias de despesa
+    await carregarCategoriasDespesa();
+
+    // Copiar orçamentos do mês anterior para categorias que não existem
+    await copiarOrcamentoMesAnterior();
+
     renderizarListaOrcamento(orcamentosAtuais);
   } catch (e) {
     console.error("Erro ao carregar orçamento:", e);
@@ -353,32 +436,127 @@ async function carregarOrcamento() {
   }
 }
 
+async function copiarOrcamentoMesAnterior() {
+  try {
+    // Calcular mês anterior
+    const [ano, mes] = MES_ANO.split("-").map(Number);
+    const mesAnterior = new Date(ano, mes - 2, 1); // mes-2 porque Date usa 0-11
+    const mesAnteriorStr = `${mesAnterior.getFullYear()}-${String(
+      mesAnterior.getMonth() + 1
+    ).padStart(2, "0")}`;
+
+    // Buscar orçamentos do mês anterior
+    const resposta = await fetch(
+      `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${mesAnteriorStr}`
+    );
+    const orcamentosMesAnterior = await resposta.json();
+
+    if (!orcamentosMesAnterior || orcamentosMesAnterior.length === 0) {
+      return; // Não há orçamentos no mês anterior para copiar
+    }
+
+    // Criar mapa de categorias que já existem no mês atual
+    const categoriasExistentes = new Set(
+      orcamentosAtuais.map((orc) => orc.id_categoria)
+    );
+
+    // Copiar apenas orçamentos de categorias que NÃO existem no mês atual
+    const { inicio, fim } = intervaloDoMes(MES_ANO);
+    const promessas = orcamentosMesAnterior
+      .filter((orc) => !categoriasExistentes.has(orc.id_categoria))
+      .map(async (orc) => {
+        try {
+          const res = await fetch(`${BASE_API}/orcamento`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_usuario: ID_USUARIO,
+              id_categoria: orc.id_categoria,
+              valor_limite: orc.valor_limite,
+              data_inicio: inicio,
+              data_fim: fim,
+              ativo: true,
+            }),
+          });
+          return await res.json();
+        } catch (e) {
+          console.error(
+            `Erro ao copiar orçamento da categoria ${orc.id_categoria}:`,
+            e
+          );
+          return null;
+        }
+      });
+
+    if (promessas.length > 0) {
+      await Promise.all(promessas);
+
+      // Recarregar orçamentos atualizados
+      const respostaAtualizada = await fetch(
+        `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
+      );
+      orcamentosAtuais = (await respostaAtualizada.json()) || [];
+    }
+  } catch (e) {
+    console.error("Erro ao copiar orçamentos do mês anterior:", e);
+  }
+}
+
 function renderizarListaOrcamento(itens) {
   const container = document.getElementById("orcamento-list");
-  if (!itens || itens.length === 0) {
+
+  // Se não há categorias carregadas, mostrar mensagem
+  if (!categoriasDespesa || categoriasDespesa.length === 0) {
     container.innerHTML =
-      '<div class="empty-state"><div class="empty-icon">📊</div><div>Nenhum orçamento cadastrado</div></div>';
+      '<div class="empty-state"><div class="empty-icon">📋</div><div>Carregando categorias...</div></div>';
     return;
   }
-  container.innerHTML = itens
-    .map((orc, idx) => {
+
+  // Criar um mapa de orçamentos por categoria
+  const orcamentoPorCategoria = {};
+  itens.forEach((orc) => {
+    orcamentoPorCategoria[orc.id_categoria] = orc;
+  });
+
+  // Renderizar todas as categorias
+  container.innerHTML = categoriasDespesa
+    .map((cat) => {
+      const orc = orcamentoPorCategoria[cat.id_categoria];
+      const temOrcamento = !!orc;
+      const valorLimite = temOrcamento ? orc.valor_limite : 0;
+      const ativo = temOrcamento
+        ? String(orc.ativo) === "1" || orc.ativo === true
+        : true;
+
       return `
-        <div class="orcamento-card">
+        <div class="orcamento-card" style="${
+          !temOrcamento || valorLimite == 0 ? "opacity: 0.6;" : ""
+        }">
           <div class="orcamento-header">
-            <div class="categoria-name">${
-              orc.nome_categoria || "Sem categoria"
-            }</div>
+            <div class="categoria-name">${cat.nome}</div>
             <div style="display:flex;align-items:center;gap:10px;">
-              <button class="btn" style="padding:6px 10px;" onclick="abrirModalEditarOrcamentoPorIndice(${idx})">Editar</button>
-              <button class="btn btn-danger" style="padding:6px 10px;" onclick="excluirOrcamentoPorIndice(${idx})">Excluir</button>
+              <button class="btn" style="padding:6px 10px;" onclick="editarOrcamentoRapido('${
+                cat.id_categoria
+              }', '${cat.nome}', ${valorLimite}, ${
+        temOrcamento ? orc.id_orcamento : "null"
+      })">Editar</button>
+              ${
+                temOrcamento && valorLimite > 0
+                  ? `<button class="btn btn-danger" style="padding:6px 10px;" onclick="limparOrcamento(${orc.id_orcamento}, '${cat.nome}')">Limpar</button>`
+                  : ""
+              }
             </div>
           </div>
           <div class="orcamento-values">Limite: ${formatarMoeda(
-            orc.valor_limite
+            valorLimite
           )}</div>
-          <div class="orcamento-values">Período: ${orc.data_inicio} a ${
-        orc.data_fim
-      }</div>
+          ${
+            temOrcamento && valorLimite > 0
+              ? `<div class="orcamento-values" style="font-size:0.85em;opacity:0.7;">Período: ${formatarData(
+                  orc.data_inicio
+                )} a ${formatarData(orc.data_fim)}</div>`
+              : '<div class="orcamento-values" style="font-size:0.85em;opacity:0.7;">Nenhum orçamento definido</div>'
+          }
         </div>
       `;
     })
@@ -498,10 +676,134 @@ async function enviarOrcamento() {
     fecharModalOrcamento();
     carregarOrcamento();
   } catch (e) {
-    console.error(e);
     alert(
       mode === "edit" ? "Erro ao editar orçamento." : "Erro ao criar orçamento."
     );
+  }
+}
+
+async function excluirOrcamentoPorIndice(indice) {
+  const orc = orcamentosAtuais[indice];
+  if (!orc || !orc.id_orcamento) {
+    alert("Orçamento não encontrado");
+    return;
+  }
+
+  if (
+    !confirm(`Deseja realmente excluir o orçamento "${orc.nome_categoria}"?`)
+  ) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_API}/orcamento`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_orcamento: Number(orc.id_orcamento) }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Falha ao excluir orçamento");
+    }
+
+    mostrarNotificacao("success", "Sucesso!", "Orçamento excluído com sucesso");
+    carregarOrcamento();
+  } catch (e) {
+    alert("Erro ao excluir orçamento: " + e.message);
+  }
+}
+
+// Edição rápida de orçamento (sem modal complexo)
+async function editarOrcamentoRapido(
+  idCategoria,
+  nomeCategoria,
+  valorAtual,
+  idOrcamento
+) {
+  const novoValor = prompt(
+    `Defina o limite de orçamento para "${nomeCategoria}" no mês ${formatarMesAno(
+      MES_ANO
+    )}:`,
+    valorAtual
+  );
+
+  if (novoValor === null) return; // Cancelou
+
+  const valor = parseFloat(novoValor);
+  if (isNaN(valor) || valor < 0) {
+    alert("Valor inválido!");
+    return;
+  }
+
+  try {
+    const { inicio, fim } = intervaloDoMes(MES_ANO);
+
+    // Se já existe orçamento, atualizar; senão, criar
+    if (idOrcamento && idOrcamento !== "null") {
+      const res = await fetch(`${BASE_API}/orcamento`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_orcamento: Number(idOrcamento),
+          valor_limite: valor,
+          ativo: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Falha ao atualizar orçamento");
+      }
+    } else {
+      const res = await fetch(`${BASE_API}/orcamento`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_usuario: ID_USUARIO,
+          id_categoria: Number(idCategoria),
+          valor_limite: valor,
+          data_inicio: inicio,
+          data_fim: fim,
+          ativo: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Falha ao criar orçamento");
+      }
+    }
+
+    mostrarNotificacao("success", "Sucesso!", "Orçamento atualizado");
+    carregarOrcamento();
+    carregarDashboard();
+  } catch (e) {
+    alert("Erro ao salvar orçamento: " + e.message);
+  }
+}
+
+// Limpar/zerar orçamento
+async function limparOrcamento(idOrcamento, nomeCategoria) {
+  if (!confirm(`Deseja remover o orçamento de "${nomeCategoria}"?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_API}/orcamento`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_orcamento: Number(idOrcamento) }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Falha ao excluir orçamento");
+    }
+
+    mostrarNotificacao("success", "Sucesso!", "Orçamento removido");
+    carregarOrcamento();
+    carregarDashboard();
+  } catch (e) {
+    alert("Erro ao excluir orçamento: " + e.message);
   }
 }
 
@@ -532,7 +834,6 @@ async function carregarDadosRegistro() {
 
     renderizarCategoriasRegistro("DESPESA");
   } catch (error) {
-    console.error("Erro ao carregar dados de registro:", error);
     mostrarNotificacao(
       "danger",
       "Erro de Carregamento",
@@ -729,11 +1030,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("input-efetuada").checked = false;
         document.getElementById("input-data").valueAsDate = new Date();
         setTipoRegistro("DESPESA");
-
-        // Processar alertas
-        if (data.alerta_orcamento)
-          processarAlertaOrcamento(data.alerta_orcamento);
-        if (data.alerta_meta) processarAlertaMeta(data.alerta_meta);
 
         mostrarTela("dashboard");
       } catch (e) {
@@ -1026,6 +1322,9 @@ async function carregarContasGerenciar() {
       return;
     }
 
+    // Armazenar contas globalmente para uso em edição
+    contasUsuario = dados;
+
     lista.innerHTML = dados
       .map(
         (conta) => `
@@ -1037,10 +1336,12 @@ async function carregarContasGerenciar() {
           </div>
         </div>
         <div class="item-gerenciar-acoes">
-          <button class="btn-icon" onclick="alert('Editar conta em desenvolvimento')">
+          <button class="btn-icon" onclick="editarConta(${conta.id_conta})">
             <i class="fa-solid fa-pen"></i>
           </button>
-          <button class="btn-icon btn-icon-danger" onclick="alert('Excluir conta em desenvolvimento')">
+          <button class="btn-icon btn-icon-danger" onclick="excluirContaComConfirmacao(${
+            conta.id_conta
+          }, '${conta.nome.replace(/'/g, "\\'")}')">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
@@ -1051,6 +1352,169 @@ async function carregarContasGerenciar() {
   } catch (error) {
     console.error("Erro ao carregar contas:", error);
     lista.innerHTML = '<div class="empty-state">Erro ao carregar contas</div>';
+  }
+}
+
+function abrirFormNovaConta() {
+  document.getElementById("modal-form-conta").style.display = "flex";
+  document.getElementById("conta-modal-title").textContent = "Nova Conta";
+  document.getElementById("hidden-id-conta").value = "";
+  document.getElementById("input-conta-nome").value = "";
+  document.getElementById("select-conta-tipo").value = "CORRENTE";
+  document.getElementById("input-conta-saldo").value = "0";
+  document.getElementById("input-conta-exibir").checked = true;
+  const btnDeletar = document.getElementById("btn-deletar-conta");
+  if (btnDeletar) btnDeletar.style.display = "none";
+}
+
+function editarConta(idConta) {
+  const conta = contasUsuario.find((c) => c.id_conta === idConta);
+  if (!conta) {
+    mostrarNotificacao("danger", "Erro", "Conta não encontrada.");
+    return;
+  }
+
+  document.getElementById("modal-form-conta").style.display = "flex";
+  document.getElementById("conta-modal-title").textContent = "Editar Conta";
+  document.getElementById("hidden-id-conta").value = conta.id_conta;
+  document.getElementById("input-conta-nome").value = conta.nome;
+  document.getElementById("select-conta-tipo").value = conta.tipo_conta;
+  document.getElementById("input-conta-saldo").value = parseFloat(
+    conta.saldo_inicial || 0
+  );
+  document.getElementById("input-conta-exibir").checked =
+    conta.exibir_no_dashboard == 1;
+  const btnDeletar = document.getElementById("btn-deletar-conta");
+  if (btnDeletar) btnDeletar.style.display = "flex";
+}
+
+function fecharFormConta() {
+  document.getElementById("modal-form-conta").style.display = "none";
+}
+
+async function salvarConta() {
+  const id_conta = document.getElementById("hidden-id-conta").value;
+  const nome = document.getElementById("input-conta-nome").value.trim();
+  const tipo_conta = document.getElementById("select-conta-tipo").value;
+  const saldo_inicial = parseFloat(
+    document.getElementById("input-conta-saldo").value || 0
+  );
+  const exibir_no_dashboard = document.getElementById("input-conta-exibir")
+    .checked
+    ? 1
+    : 0;
+
+  if (!nome) {
+    mostrarNotificacao("warning", "Atenção", "O nome da conta é obrigatório.");
+    return;
+  }
+
+  const mode = id_conta ? "edit" : "create";
+  const method = mode === "edit" ? "PUT" : "POST";
+  const endpoint = `${BASE_API}/contas`;
+
+  const payload = {
+    id_usuario: ID_USUARIO,
+    nome: nome,
+    tipo_conta: tipo_conta,
+    saldo_inicial: saldo_inicial,
+    exibir_no_dashboard: exibir_no_dashboard,
+  };
+
+  if (mode === "edit") {
+    payload.id_conta = Number(id_conta);
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(
+        data.error || `Falha ao ${mode === "edit" ? "editar" : "criar"} conta.`
+      );
+    }
+
+    mostrarNotificacao(
+      "success",
+      "Sucesso!",
+      `Conta ${nome} salva com sucesso.`
+    );
+    fecharFormConta();
+    carregarContasGerenciar();
+  } catch (e) {
+    console.error("Erro ao salvar conta:", e);
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+
+function confirmarExclusaoConta() {
+  const id_conta = document.getElementById("hidden-id-conta").value;
+  const nome = document.getElementById("input-conta-nome").value;
+
+  if (
+    !confirm(
+      `Tem certeza que deseja EXCLUIR a conta "${nome}"? Se houver transações vinculadas, a exclusão falhará.`
+    )
+  ) {
+    return;
+  }
+
+  excluirConta(id_conta);
+}
+
+function excluirContaComConfirmacao(idConta, nomeConta) {
+  if (!confirm(`Tem certeza que deseja excluir a conta "${nomeConta}"?`)) {
+    return;
+  }
+  excluirConta(idConta);
+}
+
+async function excluirConta(idConta) {
+  try {
+    const resposta = await fetch(`${BASE_API}/contas`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_conta: Number(idConta) }),
+    });
+
+    const texto = await resposta.text();
+    let dados;
+
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      throw new Error("Erro no servidor. Verifique os logs do PHP.");
+    }
+
+    if (!resposta.ok) {
+      if (
+        dados.error &&
+        (dados.error.includes("Integrity constraint") ||
+          dados.error.includes("vinculada"))
+      ) {
+        throw new Error(
+          "Não é possível excluir. A conta está vinculada a transações."
+        );
+      }
+      throw new Error(dados.error || "Erro desconhecido ao excluir.");
+    }
+
+    mostrarNotificacao(
+      "success",
+      "Excluída!",
+      "Conta removida com sucesso.",
+      4000
+    );
+    fecharFormConta();
+    carregarContasGerenciar();
+  } catch (error) {
+    console.error("Erro ao excluir conta:", error);
+    mostrarNotificacao("danger", "Erro de Exclusão", error.message);
   }
 }
 
@@ -1065,6 +1529,8 @@ function fecharModalGerenciarCategorias() {
 
 async function carregarCategoriasGerenciar() {
   const lista = document.getElementById("lista-categorias-gerenciar");
+  if (!lista) return;
+
   lista.innerHTML =
     '<div class="loading"><div class="spinner"></div> Carregando...</div>';
 
@@ -1072,36 +1538,40 @@ async function carregarCategoriasGerenciar() {
     const resposta = await fetch(
       `${BASE_API}/categorias?id_usuario=${ID_USUARIO}`
     );
-    const dados = await resposta.json();
+    const categorias = await resposta.json();
 
-    if (!resposta.ok) throw new Error(dados.error);
-    categoriasAtuais = dados; // Armazena globalmente
-
-    if (!dados.length) {
-      lista.innerHTML =
-        '<div class="empty-state">Nenhuma categoria cadastrada</div>';
+    if (!resposta.ok) {
+      lista.innerHTML = `<div class='empty-state'>Erro ao carregar categorias</div>`;
       return;
     }
 
-    lista.innerHTML = dados
+    if (!categorias || categorias.length === 0) {
+      lista.innerHTML =
+        '<div class="empty-state"><div class="empty-icon">📋</div><div>Nenhuma categoria cadastrada</div></div>';
+      return;
+    }
+
+    // Armazenar categorias globalmente para uso em edição
+    categoriasAtuais = categorias;
+
+    lista.innerHTML = categorias
       .map(
         (cat) => `
-      <div class="item-gerenciar" onclick="abrirFormEditarCategoria(${
-        cat.id_categoria
-      })" style="cursor: pointer;">
-        <div class="item-gerenciar-info">
-          <div class="item-gerenciar-nome">${cat.nome}</div>
-          <div class="item-gerenciar-detalhes" style="color: ${
-            cat.tipo === "DESPESA" ? "#EF4444" : "#10B981"
-          };">
-            ${cat.tipo} ${cat.icone ? "- " + cat.icone : ""}
-          </div>
+      <div class="categoria-item" style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f9fa;border-radius:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:600;margin-bottom:5px;">${cat.nome}</div>
+          <div style="font-size:12px;color:#666;">Tipo: ${cat.tipo}</div>
         </div>
-        <div class="item-gerenciar-acoes">
-          <button class="btn-icon" onclick="event.stopPropagation(); abrirFormEditarCategoria(${
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="padding:6px 12px;" onclick="editarCategoria(${
             cat.id_categoria
           })">
-            <i class="fa-solid fa-pen"></i>
+            <i class="fa-solid fa-edit"></i> Editar
+          </button>
+          <button class="btn btn-danger" style="padding:6px 12px;" onclick="excluirCategoriaComConfirmacao(${
+            cat.id_categoria
+          }, '${cat.nome.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-trash"></i> Excluir
           </button>
         </div>
       </div>
@@ -1115,8 +1585,6 @@ async function carregarCategoriasGerenciar() {
   }
 }
 
-// ==================== FORMULÁRIO CATEGORIA ====================
-
 function abrirFormNovaCategoria() {
   document.getElementById("modal-form-categoria").style.display = "flex";
   document.getElementById("categoria-modal-title").textContent =
@@ -1126,10 +1594,11 @@ function abrirFormNovaCategoria() {
   document.getElementById("select-categoria-tipo").value = "DESPESA";
   document.getElementById("input-categoria-icone").value = "";
   document.getElementById("input-categoria-cor").value = "#3B82F6";
-  document.getElementById("btn-deletar-categoria").style.display = "none";
+  const btnDeletar = document.getElementById("btn-deletar-categoria");
+  if (btnDeletar) btnDeletar.style.display = "none";
 }
 
-function abrirFormEditarCategoria(idCategoria) {
+function editarCategoria(idCategoria) {
   const categoria = categoriasAtuais.find(
     (c) => c.id_categoria === idCategoria
   );
@@ -1148,7 +1617,141 @@ function abrirFormEditarCategoria(idCategoria) {
     categoria.icone || "";
   document.getElementById("input-categoria-cor").value =
     categoria.cor_hex || "#3B82F6";
-  document.getElementById("btn-deletar-categoria").style.display = "flex";
+  const btnDeletar = document.getElementById("btn-deletar-categoria");
+  if (btnDeletar) btnDeletar.style.display = "flex";
+}
+
+async function carregarDespesasRecorrencia() {
+  const lista = document.getElementById("lista-despesas-recorrencia");
+  if (!lista) return;
+  lista.innerHTML =
+    '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  try {
+    // Buscar transações de TODOS os meses (sem filtro de mes_ano)
+    const resposta = await fetch(
+      `${BASE_API}/despesas?id_usuario=${ID_USUARIO}`
+    );
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      lista.innerHTML = `<div class='empty-state'>Erro: ${
+        dados.error || resposta.status
+      }</div>`;
+      return;
+    }
+    if (!Array.isArray(dados)) {
+      lista.innerHTML = `<div class='empty-state'>Resposta inesperada</div>`;
+      return;
+    }
+    if (!dados.length) {
+      lista.innerHTML =
+        '<div class="empty-state">Nenhuma despesa encontrada</div>';
+      return;
+    }
+
+    // Remover duplicatas baseado em descrição, valor, categoria e tipo
+    const transacoesUnicas = [];
+    const chaves = new Set();
+
+    for (const d of dados) {
+      const chave = `${d.descricao}-${d.valor}-${d.id_categoria}-${d.tipo_movimentacao}`;
+      if (!chaves.has(chave)) {
+        chaves.add(chave);
+        transacoesUnicas.push(d);
+      }
+    }
+
+    lista.innerHTML = transacoesUnicas
+      .map((d) => {
+        const jaRecorrente =
+          String(d.recorrente) === "1" || d.recorrente === true;
+        const tipoLabel =
+          d.tipo_movimentacao === "RECEITA" ? "💰 Receita" : "💸 Despesa";
+        const tipoClass =
+          d.tipo_movimentacao === "RECEITA" ? "tipo-receita" : "tipo-despesa";
+
+        return `
+        <div class="item-recorrencia">
+          <div class="info">
+            <div class="descricao">${
+              d.descricao || "Sem descrição"
+            } <span class="${tipoClass}" style="font-size:0.85em;opacity:0.7;">${tipoLabel}</span></div>
+            <div class="meta">
+              <span class="valor ${
+                jaRecorrente ? "recorrente" : ""
+              }">${formatarMoeda(d.valor || 0)}</span>
+              <span class="data">${formatarData(
+                d.data_transacao || MES_ANO + "-01"
+              )}</span>
+              ${
+                jaRecorrente
+                  ? '<span class="tag-recorrente">Recorrente</span>'
+                  : ""
+              }
+            </div>
+          </div>
+          <div class="acoes">
+            ${
+              jaRecorrente
+                ? `<button class="btn" style="background:#EF4444;" onclick="removerRecorrencia(${d.id_transacao})">Remover Recorrência</button>`
+                : `<button class="btn" onclick="tornarDespesaRecorrente(${d.id_transacao})">Tornar Recorrente</button>`
+            }
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+  } catch (e) {
+    lista.innerHTML = `<div class='empty-state'>Erro ao carregar despesas</div>`;
+    console.error("Erro ao carregar despesas recorrência:", e);
+  }
+}
+
+// ==================== MODAL RECORRÊNCIAS (RESTAURADO) ====================
+function abrirModalGerenciarRecorrencias() {
+  const modal = document.getElementById("modal-gerenciar-recorrencias");
+  if (!modal) {
+    mostrarNotificacao(
+      "danger",
+      "Erro",
+      "Modal de recorrências não encontrado."
+    );
+    return;
+  }
+  modal.style.display = "flex";
+  carregarDespesasRecorrencia();
+}
+
+function fecharModalGerenciarRecorrencias() {
+  const modal = document.getElementById("modal-gerenciar-recorrencias");
+  if (modal) modal.style.display = "none";
+}
+
+// Expor para uso pelos atributos onclick do HTML
+window.abrirModalGerenciarRecorrencias = abrirModalGerenciarRecorrencias;
+window.fecharModalGerenciarRecorrencias = fecharModalGerenciarRecorrencias;
+
+// ==================== GERAÇÃO AUTOMÁTICA DE RECORRÊNCIAS ====================
+
+async function gerarRecorrenciasAutomaticas() {
+  try {
+    const resposta = await fetch(`${BASE_API}/recorrencias/gerar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_usuario: ID_USUARIO, mes_ano: MES_ANO }),
+    });
+
+    const textoResposta = await resposta.text();
+    const dados = JSON.parse(textoResposta);
+
+    if (!dados.success) {
+      console.error(
+        "Erro ao gerar recorrências:",
+        dados.mensagem || dados.error
+      );
+    }
+  } catch (e) {
+    console.error("Erro ao gerar recorrências:", e.message);
+  }
 }
 
 function fecharFormCategoria() {
@@ -1230,6 +1833,15 @@ function confirmarExclusaoCategoria() {
   excluirCategoria(id_categoria);
 }
 
+function excluirCategoriaComConfirmacao(idCategoria, nomeCategoria) {
+  if (
+    !confirm(`Tem certeza que deseja excluir a categoria "${nomeCategoria}"?`)
+  ) {
+    return;
+  }
+  excluirCategoria(idCategoria);
+}
+
 async function excluirCategoria(idCategoria) {
   try {
     const resposta = await fetch(`${BASE_API}/categorias`, {
@@ -1238,7 +1850,14 @@ async function excluirCategoria(idCategoria) {
       body: JSON.stringify({ id_categoria: Number(idCategoria) }),
     });
 
-    const dados = await resposta.json();
+    const texto = await resposta.text();
+    let dados;
+
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      throw new Error("Erro no servidor. Verifique os logs do PHP.");
+    }
 
     if (!resposta.ok) {
       // Tratamento para RESTRICT do SQL (transações vinculadas)
@@ -1260,20 +1879,11 @@ async function excluirCategoria(idCategoria) {
       "Categoria removida com sucesso.",
       4000
     );
-    fecharFormCategoria();
     carregarCategoriasGerenciar();
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
     mostrarNotificacao("danger", "Erro de Exclusão", error.message);
   }
-}
-
-function abrirFormNovaConta() {
-  alert("Formulário de nova conta em desenvolvimento");
-}
-
-function abrirFormNovaCategoria() {
-  alert("Formulário de nova categoria em desenvolvimento");
 }
 
 function abrirModalSobre() {
@@ -1282,4 +1892,99 @@ function abrirModalSobre() {
 
 function fecharModalSobre() {
   document.getElementById("modal-sobre").style.display = "none";
+}
+
+window.mostrarTela = mostrarTela;
+
+async function tornarDespesaRecorrente(idTransacao) {
+  if (!idTransacao) return;
+  try {
+    const resposta = await fetch(`${BASE_API}/recorrencia`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_transacao: idTransacao,
+        id_usuario: ID_USUARIO,
+      }),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok || !dados.success) {
+      throw new Error(dados.error || "Falha ao marcar recorrente");
+    }
+    mostrarNotificacao(
+      "success",
+      "Recorrente",
+      "Transação marcada como recorrente!"
+    );
+    carregarDespesasRecorrencia();
+  } catch (e) {
+    console.error("Erro recorrência:", e);
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+
+async function removerRecorrencia(idTransacao) {
+  if (!idTransacao) return;
+  if (!confirm("Deseja realmente remover esta transação da recorrência?"))
+    return;
+
+  try {
+    const resposta = await fetch(`${BASE_API}/recorrencia/remover`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_transacao: idTransacao,
+        id_usuario: ID_USUARIO,
+      }),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok || !dados.success) {
+      throw new Error(dados.error || "Falha ao remover recorrência");
+    }
+    mostrarNotificacao(
+      "success",
+      "Removido",
+      "Recorrência removida com sucesso!"
+    );
+    carregarDespesasRecorrencia();
+  } catch (e) {
+    console.error("Erro ao remover recorrência:", e);
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+
+async function marcarComoEfetuada(idTransacao) {
+  if (!idTransacao) return;
+
+  // Confirmação antes de marcar como efetuada
+  if (
+    !confirm("Tem certeza que deseja marcar este pagamento como concluído?")
+  ) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${BASE_API}/transacoes`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_transacao: idTransacao,
+        efetuada: 1,
+      }),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok || !dados.success) {
+      throw new Error(dados.error || "Falha ao marcar como efetuada");
+    }
+    mostrarNotificacao(
+      "success",
+      "Confirmado",
+      "Transação marcada como efetuada!"
+    );
+    // Recarregar dashboard para atualizar saldo e listas
+    carregarDashboard();
+  } catch (e) {
+    console.error("Erro ao marcar como efetuada:", e);
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
 }

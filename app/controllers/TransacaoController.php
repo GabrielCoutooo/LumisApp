@@ -24,12 +24,16 @@ class TransacaoController
     {
         $id_usuario = $_GET['id_usuario'] ?? null;
         $id_conta = $_GET['id_conta'] ?? null;
+        $data_inicio = $_GET['data_inicio'] ?? null;
+        $data_fim = $_GET['data_fim'] ?? null;
+
         if (!$id_usuario) {
             http_response_code(400);
             echo json_encode(['error' => 'id_usuario é obrigatório']);
             return;
         }
-        $transacoes = $this->repo->getExtrato($id_usuario, $id_conta);
+
+        $transacoes = $this->repo->getExtrato($id_usuario, $id_conta, $data_inicio, $data_fim);
         echo json_encode($transacoes);
     }
 
@@ -83,5 +87,65 @@ class TransacaoController
         }
 
         echo json_encode($response);
+    }
+    // Lista todas as despesas do usuário
+    public function listarDespesas()
+    {
+        $id_usuario = $_GET['id_usuario'] ?? null;
+        if (!$id_usuario) {
+            http_response_code(400);
+            echo json_encode(['error' => 'id_usuario é obrigatório']);
+            return;
+        }
+        $despesas = $this->repo->getDespesas($id_usuario);
+        echo json_encode($despesas);
+    }
+
+    // Marca uma despesa como recorrente
+    public function marcarRecorrente()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id_transacao = $data['id_transacao'] ?? null;
+        $id_usuario = $data['id_usuario'] ?? null;
+        if (!$id_transacao || !$id_usuario) {
+            http_response_code(400);
+            echo json_encode(['error' => 'id_transacao e id_usuario são obrigatórios']);
+            return;
+        }
+        $result = $this->repo->setRecorrente($id_transacao, $id_usuario);
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Falha ao marcar recorrente']);
+        }
+    }
+
+    // Atualiza uma transação (principalmente para marcar como efetuada)
+    public function atualizar()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id_transacao = $data['id_transacao'] ?? null;
+
+        if (!$id_transacao) {
+            http_response_code(400);
+            echo json_encode(['error' => 'id_transacao é obrigatório']);
+            return;
+        }
+
+        // Permitir atualizar apenas o campo efetuada
+        if (isset($data['efetuada'])) {
+            $result = $this->repo->atualizarEfetuada($id_transacao, $data['efetuada']);
+
+            if ($result) {
+                echo json_encode(['success' => true, 'mensagem' => 'Transação atualizada com sucesso']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['error' => 'Falha ao atualizar transação']);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['error' => 'Nenhum campo para atualizar']);
+        }
     }
 }

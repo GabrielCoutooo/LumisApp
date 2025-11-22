@@ -80,6 +80,21 @@ $routes = [
     ],
     '/api/extrato' => [
         'GET' => ['controller' => 'TransacaoController', 'method' => 'extrato']
+    ],
+    '/api/despesas' => [
+        'GET' => ['controller' => 'RecorrenciaController', 'method' => 'listarDespesas']
+    ],
+    '/api/recorrencia' => [
+        'POST' => ['controller' => 'RecorrenciaController', 'method' => 'marcarRecorrente']
+    ],
+    '/api/recorrencia/remover' => [
+        'POST' => ['controller' => 'RecorrenciaController', 'method' => 'removerRecorrente']
+    ],
+    '/api/recorrencias/gerar' => [
+        'POST' => ['controller' => 'RecorrenciaController', 'method' => 'gerarRecorrenciasMes']
+    ],
+    '/api/transferencia' => [
+        'POST' => ['controller' => 'TransacaoController', 'method' => 'criarTransferencia']
     ]
 ];
 

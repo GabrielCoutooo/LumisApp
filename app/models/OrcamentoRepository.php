@@ -56,4 +56,11 @@ class OrcamentoRepository
         }
         return $stmt->execute();
     }
+
+    public function excluir($id_orcamento)
+    {
+        $stmt = $this->db->prepare('DELETE FROM Orcamento WHERE id_orcamento = :id_orcamento');
+        $stmt->bindParam(':id_orcamento', $id_orcamento, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

@@ -22,12 +22,17 @@ LumisApp é um sistema de gestão financeira pessoal, com backend em PHP (MVC + 
 
 **Principais Funcionalidades:**
 
-- Autenticação de usuários
-- Gestão de contas bancárias
-- Registro e categorização de transações
-- Dashboard financeiro
-- Orçamentos e metas
-- Relatórios e exportação de dados
+- ✅ Autenticação de usuários
+- ✅ Gestão completa de contas bancárias (CRUD)
+- ✅ Registro e categorização de transações
+- ✅ Dashboard financeiro dinâmico por mês
+- ✅ Orçamentos fixos por categoria (Alimentação, Saúde, Lazer, etc.)
+- ✅ Sistema de transações pendentes e próximos pagamentos
+- ✅ Filtros dinâmicos de extrato (por mês e tipo)
+- ✅ Gestão de categorias personalizadas
+- ✅ Relatórios e exportação de dados (CSV/XLSX)
+- ✅ Confirmações antes de ações críticas
+- ✅ Formatação automática de datas (DD/MM/YYYY)
 
 ---
 
@@ -162,9 +167,14 @@ LumisApp/
 1. ✅ Testar todas as funcionalidades
 2. ✅ Validar exportação XLSX
 3. ✅ Verificar todas as rotas
-4. 📝 Adicionar testes automatizados (PHPUnit)
-5. 🔐 Implementar autenticação JWT
-6. 🎨 Melhorar interface (se necessário)
+4. ✅ Implementar filtros dinâmicos por mês
+5. ✅ Sistema de orçamentos fixos por categoria
+6. ✅ Gestão completa de contas (CRUD)
+7. ✅ Confirmações em ações críticas
+8. ✅ Formatação de datas em português
+9. 📝 Adicionar testes automatizados (PHPUnit)
+10. 🔐 Implementar autenticação JWT
+11. 🎨 Melhorar interface (se necessário)
 
 ---
 
@@ -200,13 +210,19 @@ Consulte a seção abaixo para detalhes completos de cada endpoint e exemplos de
 
 ### Transações
 
-- `POST /api/transacoes`
-- `GET /api/extrato?id_usuario=ID[&id_conta=ID]`
+- `POST /api/transacoes` — Criar transação
+- `GET /api/extrato?id_usuario=ID[&id_conta=ID]&data_inicio=YYYY-MM-DD&data_fim=YYYY-MM-DD` — Listar extrato com filtros
+- `PUT /api/transacoes` — Atualizar transação (marcar como efetuada)
+- `GET /api/despesas?id_usuario=ID` — Listar todas as despesas
 
 ### Orçamentos
 
-- `GET /api/orcamento?id_usuario=ID&mes_ano=YYYY-MM`
-- `POST /api/orcamento`
+- `GET /api/orcamento?id_usuario=ID&mes_ano=YYYY-MM` — Listar orçamentos do mês
+- `POST /api/orcamento` — Criar orçamento
+- `PUT /api/orcamento` — Atualizar orçamento existente
+- `DELETE /api/orcamento` — Excluir orçamento
+
+**Novidade:** Orçamentos agora são exibidos como categorias fixas na interface, permitindo edição rápida por mês.
 
 ### Relatórios
 
@@ -214,12 +230,24 @@ Consulte a seção abaixo para detalhes completos de cada endpoint e exemplos de
 
 ### Dashboard
 
-- `GET /api/dashboard?id_usuario=ID&mes_ano=YYYY-MM`
+- `GET /api/dashboard?id_usuario=ID&mes_ano=YYYY-MM` — Dashboard completo
+
+**Recursos Dinâmicos:**
+
+- Saldo total calculado por mês
+- Receitas e despesas do mês atual
+- Orçamentos com percentual de uso
+- Próximos pagamentos filtrados por mês
+- Aviso de transações pendentes no mês
 
 ### Categorias
 
-- `GET /api/categorias?id_usuario=ID[&tipo=RECEITA|DESPESA]`
-- `POST /api/categorias`
+- `GET /api/categorias?id_usuario=ID[&tipo=RECEITA|DESPESA]` — Listar categorias
+- `POST /api/categorias` — Criar categoria
+- `PUT /api/categorias` — Atualizar categoria
+- `DELETE /api/categorias` — Excluir categoria
+
+**Gestão Completa:** Interface permite criar, editar e excluir categorias personalizadas com cores e ícones.
 
 ### Metas Financeiras
 
@@ -1010,25 +1038,33 @@ function handlePress() {
 
 ## 8. Identidade Visual
 
-**Paleta de Cores:**
+**Paleta de Cores (Foco em Clareza):**
 
-- Azul Principal: #3B82F6
-- Roxo Profundo: #8B5CF6
-- Verde (Receita): #10B981
-- Vermelho (Despesa): #EF4444
-- Amarelo (Atenção): #F59E0B
+- 🔵 Índigo Principal: #4F46E5 (Indigo-600)
+- 💜 Roxo Profundo: #7C3AED (Purple-600)
+- 🌟 Índigo Claro: #6366F1 (Indigo-500)
+- 💎 Violeta: #8B5CF6 (Violet-500)
+- ✅ Verde (Receita): #10B981 (Emerald-500)
+- ❌ Vermelho (Despesa): #EF4444 (Red-500)
+- ⚠️ Amarelo (Atenção): #F59E0B (Amber-500)
 
-**Gradiente Principal:**
+**Gradiente Principal (Clareza Luminosa):**
 
 ```css
-background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
 ```
+
+**Conceito Visual:**
+O esquema de cores frias (azuis e roxos) representa clareza, confiança e tranquilidade financeira. Os gradientes remetem a um feixe de luz que "acende" a clareza sobre suas finanças.
 
 **Componentes de UI:**
 
-- Botões, cards, gráficos, barras de progresso
-- Tipografia hierárquica
-- Layout responsivo para mobile
+- Botões com gradientes luminosos
+- Cards com sombras suaves
+- Gráficos e barras de progresso em tons frios
+- Tipografia hierárquica clara
+- Layout responsivo mobile-first
+- Ícones que remetem a luz e clareza (💡✨🌟)
 
 **Wireframes:**
 
@@ -1040,25 +1076,61 @@ background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
 
 O backend foi implementado em PHP seguindo MVC, com controllers, repositories, services e rotas centralizadas. Todas as funcionalidades principais estão cobertas, com prepared statements para segurança, respostas JSON padronizadas e documentação detalhada.
 
-**Destaques:**
+**Destaques Técnicos:**
 
-- Service Layer para lógica de negócio
-- Repository Pattern para acesso a dados
-- Testes completos de todos os endpoints
-- Exportação de dados (CSV/XLSX)
+- ✅ Service Layer para lógica de negócio
+- ✅ Repository Pattern para acesso a dados
+- ✅ Testes completos de todos os endpoints
+- ✅ Exportação de dados (CSV/XLSX)
+- ✅ Filtragem dinâmica por intervalo de datas
+- ✅ Sistema de alertas e notificações
+- ✅ Validação de dados no backend e frontend
+
+**Destaques de UX:**
+
+- ✅ Interface intuitiva com navegação por abas
+- ✅ Filtros persistentes ao navegar entre meses
+- ✅ Confirmações em ações críticas
+- ✅ Feedback visual imediato (toasts)
+- ✅ Orçamentos com edição rápida via prompt
+- ✅ Categorias fixas sempre visíveis
+- ✅ Formatação de valores e datas em português brasileiro
 
 ---
 
 ## 10. Atualizações e Roadmap
 
-**Versão Atual:** 2.0 (19/11/2025)
+**Versão Atual:** 2.5 (21/11/2025)
+
+**Últimas Atualizações:**
+
+### Versão 2.5 (21/11/2025)
+
+- ✅ **Filtros Dinâmicos**: Extrato agora filtra transações por mês e tipo (Receitas/Despesas)
+- ✅ **Orçamentos Fixos**: Todas as categorias de despesa aparecem fixas, permitindo edição rápida
+- ✅ **Próximos Pagamentos**: Filtrados automaticamente pelo mês atual do sistema
+- ✅ **Gestão de Contas**: CRUD completo - criar, editar e excluir contas bancárias
+- ✅ **Confirmações**: Diálogos de confirmação antes de marcar pagamentos como efetuados
+- ✅ **Formatação BR**: Datas exibidas no formato DD/MM/YYYY em todo o sistema
+- ✅ **Navegação Mensal**: Sistema mantém filtros ativos ao navegar entre meses
+- ✅ **Limpeza de Código**: Removidos códigos duplicados e não utilizados
+
+### Versão 2.0 (19/11/2025)
+
+- ✅ Backend implementado em PHP seguindo MVC
+- ✅ Service Layer para lógica de negócio
+- ✅ Repository Pattern para acesso a dados
+- ✅ Exportação de dados (CSV/XLSX)
 
 **Próximas Etapas:**
 
-- Implementar frontend mobile
+- Implementar frontend mobile nativo
 - Adicionar autenticação JWT
-- Middleware de segurança
-- Melhorias de UX e performance
+- Middleware de segurança avançado
+- Notificações push para alertas de orçamento
+- Gráficos e análises avançadas
+- Backup automático de dados
+- Melhorias de performance e caching
 
 ---
 
@@ -1074,4 +1146,4 @@ O backend foi implementado em PHP seguindo MVC, com controllers, repositories, s
 
 ---
 
-**Status:** Backend Completo | Documentação Unificada | Frontend Mobile em desenvolvimento
+**Status:** Backend Completo ✅ | Frontend Web Funcional ✅ | Documentação Atualizada ✅ | Mobile em Planejamento 📱

@@ -94,4 +94,25 @@ class OrcamentoController
 
         echo json_encode($status);
     }
+
+    public function excluir()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data['id_orcamento'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'id_orcamento é obrigatório']);
+            return;
+        }
+
+        $id_orcamento = (int)$data['id_orcamento'];
+        $excluido = $this->repo->excluir($id_orcamento);
+
+        if ($excluido) {
+            echo json_encode(['success' => true, 'message' => 'Orçamento excluído com sucesso']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erro ao excluir orçamento']);
+        }
+    }
 }

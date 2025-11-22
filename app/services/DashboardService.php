@@ -27,8 +27,8 @@ class DashboardService
 
     public function getDashboardData($id_usuario, $mes_ano)
     {
-        // 1. Saldo Total (soma de todas as contas)
-        $saldoTotal = $this->calcularSaldoTotal($id_usuario);
+        // 1. Saldo Total (soma de todas as contas + transações até o mês selecionado)
+        $saldoTotal = $this->calcularSaldoTotal($id_usuario, $mes_ano);
 
         // 2. Gastos do Mês (total de despesas)
         $gastosMes = $this->calcularGastosMes($id_usuario, $mes_ano);
@@ -39,8 +39,8 @@ class DashboardService
         // 4. Resumo de Orçamentos vs. Gastos
         $orcamentosVsGastos = $this->compararOrcamentosGastos($id_usuario, $mes_ano);
 
-        // 5. Próximos Pagamentos (transações não efetuadas)
-        $proximosPagamentos = $this->getProximosPagamentos($id_usuario);
+        // 5. Próximos Pagamentos (transações não efetuadas do mês atual)
+        $proximosPagamentos = $this->getProximosPagamentos($id_usuario, $mes_ano);
 
         // 6. Contas com saldos
         $contas = $this->getContasComSaldo($id_usuario);
@@ -58,16 +58,29 @@ class DashboardService
         ];
     }
 
-    private function calcularSaldoTotal($id_usuario)
+    private function calcularSaldoTotal($id_usuario, $mes_ano)
     {
-        $sql = 'SELECT SUM(saldo_inicial) as total FROM Conta WHERE id_usuario = :id_usuario AND exibir_no_dashboard = 1';
+        // Saldo do mês = Receitas do mês - Despesas do mês (cada mês começa zerado)
+        $sql = 'SELECT 
+                    COALESCE(SUM(CASE WHEN tipo_movimentacao = "RECEITA" THEN valor ELSE 0 END), 0) as receitas,
+                    COALESCE(SUM(CASE WHEN tipo_movimentacao = "DESPESA" THEN valor ELSE 0 END), 0) as despesas
+                FROM Transacao 
+                WHERE id_usuario = :id_usuario 
+                AND efetuada = 1
+                AND DATE_FORMAT(data_transacao, "%Y-%m") = :mes_ano';
+
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id_usuario', $id_usuario);
+        $stmt->bindParam(':mes_ano', $mes_ano);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return floatval($result['total'] ?? 0);
-    }
 
+        $receitas = floatval($result['receitas'] ?? 0);
+        $despesas = floatval($result['despesas'] ?? 0);
+
+        // Saldo do mês (cada mês independente)
+        return $receitas - $despesas;
+    }
     private function calcularGastosMes($id_usuario, $mes_ano)
     {
         $sql = 'SELECT SUM(valor) as total FROM Transacao 
@@ -161,19 +174,19 @@ class DashboardService
         return (float)($row['gasto_realizado_periodo'] ?? 0.00);
     }
 
-    private function getProximosPagamentos($id_usuario)
+    private function getProximosPagamentos($id_usuario, $mes_ano)
     {
         $sql = 'SELECT t.*, c.nome as categoria
                 FROM Transacao t
                 JOIN Categoria c ON t.id_categoria = c.id_categoria
                 WHERE t.id_usuario = :id_usuario
                 AND t.efetuada = 0
-                AND t.data_transacao >= CURDATE()
-                ORDER BY t.data_transacao ASC
-                LIMIT 5';
+                AND DATE_FORMAT(t.data_transacao, "%Y-%m") = :mes_ano
+                ORDER BY t.data_transacao ASC';
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id_usuario', $id_usuario);
+        $stmt->bindParam(':mes_ano', $mes_ano);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
