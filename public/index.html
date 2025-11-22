@@ -23,24 +23,25 @@
     <div class="mobile-container">
         <!-- ==================== TELA: DASHBOARD ==================== -->
         <div id="dashboard-screen">
-            <div class="header">
-                <div class="header-greeting">Olá, Teste User</div>
-                <div class="header-title" id="saudacao-dinamica"><i class="fa-solid fa-sun"></i> Boa tarde</div>
-            </div>
-
-            <!-- Navegação de Mês -->
-            <div class="mes-navegacao">
-                <button onclick="navegarMes(-1)" class="mes-nav-btn">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <div class="mes-info-container">
-                    <span id="titulo-mes-atual" class="mes-titulo">Carregando...</span>
-                    <button id="btn-mes-atual" onclick="voltarMesAtual()" class="btn-hoje"
-                        style="display:none;">Hoje</button>
+            <div class="header header-with-month">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div class="header-greeting">Olá, Teste User</div>
+                    <div class="header-title" id="saudacao-dinamica"><i class="fa-solid fa-sun"></i> Boa tarde</div>
                 </div>
-                <button onclick="navegarMes(1)" class="mes-nav-btn">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
+                <div class="mes-navegacao header-embedded-month"
+                    style="margin:0;box-shadow:none;border:1px solid rgba(255,255,255,0.18);">
+                    <button onclick="navegarMes(-1)" class="mes-nav-btn">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="mes-info-container">
+                        <span id="titulo-mes-atual" class="mes-titulo">Carregando...</span>
+                        <button id="btn-mes-atual" onclick="voltarMesAtual()" class="btn-hoje"
+                            style="display:none;">Hoje</button>
+                    </div>
+                    <button onclick="navegarMes(1)" class="mes-nav-btn">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="content">
@@ -56,12 +57,12 @@
 
                 <!-- Resumo Mensal -->
                 <div class="resumo-grid">
-                    <div class="resumo-card">
+                    <div class="resumo-card" onclick="abrirModalTransacoes('RECEITA')" style="cursor:pointer;">
                         <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
                         <div class="resumo-label">Receitas</div>
                         <div class="resumo-value receita" id="receitas-mes">-</div>
                     </div>
-                    <div class="resumo-card">
+                    <div class="resumo-card" onclick="abrirModalTransacoes('DESPESA')" style="cursor:pointer;">
                         <div class="icon"><i class="fa-solid fa-chart-line-down"></i></div>
                         <div class="resumo-label">Despesas</div>
                         <div class="resumo-value despesa" id="despesas-mes">-</div>
@@ -711,6 +712,48 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="fecharModalSobre()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LISTA DE RECEITAS/DESPESAS DO MÊS -->
+    <div id="modal-transacoes-tipo" class="modal-backdrop" onclick="if(event.target===this) fecharModalTransacoesTipo()"
+        style="display:none;">
+        <div class="modal modal-large">
+            <div class="modal-header" style="text-align:center;display:block;">
+                <span id="transacoes-tipo-titulo">Transações</span>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+                <div id="lista-transacoes-tipo">
+                    <div class="loading">
+                        <div class="spinner"></div> Carregando...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="fecharModalTransacoesTipo()"
+                    style="width:100%;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALHES DO ORÇAMENTO -->
+    <div id="modal-orcamento-detalhes" class="modal-backdrop"
+        onclick="if(event.target===this) fecharModalOrcamentoDetalhes()" style="display:none;">
+        <div class="modal modal-large">
+            <div class="modal-header" style="text-align:center;display:block;">
+                <span id="orcamento-detalhes-titulo">Orçamento</span>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+                <div id="orcamento-detalhes-info" style="margin-bottom:15px;font-size:14px;line-height:1.6;"></div>
+                <div id="orcamento-detalhes-transacoes">
+                    <div class="loading">
+                        <div class="spinner"></div> Carregando transações...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn" onclick="fecharModalOrcamentoDetalhes()" style="flex:1;">Fechar</button>
             </div>
         </div>
     </div>

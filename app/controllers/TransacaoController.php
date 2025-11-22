@@ -148,4 +148,23 @@ class TransacaoController
             echo json_encode(['error' => 'Nenhum campo para atualizar']);
         }
     }
+
+    // DELETE /api/transacoes (id_transacao no corpo)
+    public function excluir()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id_transacao = $data['id_transacao'] ?? null;
+        if (!$id_transacao) {
+            http_response_code(400);
+            echo json_encode(['error' => 'id_transacao é obrigatório']);
+            return;
+        }
+        $ok = $this->repo->excluir($id_transacao);
+        if ($ok) {
+            echo json_encode(['success' => true]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Falha ao excluir transação']);
+        }
+    }
 }

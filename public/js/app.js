@@ -13,6 +13,7 @@ let contasUsuario = [];
 let orcamentosAtuais = [];
 let saldoVisivel = true;
 let categoriasAtuais = []; // Armazena todas as categorias
+let dashboardOrcamentos = []; // Orçamentos retornados no dashboard
 
 // ==================== MOEDA / CONVERSÃO ====================
 const BASE_CURRENCY = "BRL"; // Moeda base armazenada no backend
@@ -214,6 +215,9 @@ async function carregarDashboard() {
       dados.despesas_mes || 0
     );
 
+    // Guardar orçamentos para detalhes posteriores
+    dashboardOrcamentos = dados.orcamentos || [];
+
     // Mostrar aviso se houver pagamentos pendentes (recorrências não efetuadas)
     // O backend já retorna apenas pendentes do mês atual (mes_ano)
     const pendentes = dados.proximos_pagamentos || [];
@@ -264,7 +268,9 @@ function renderizarOrcamentos(orcamentos) {
       const status = orc.status || "OK";
 
       return `
-            <div class="orcamento-card">
+            <div class="orcamento-card" style="cursor:pointer;" onclick="abrirDetalhesOrcamento(${
+              orc.id_orcamento
+            })">
                 <div class="orcamento-header">
                     <div class="categoria-name">${
                       orc.nome_categoria || orc.categoria || "Sem categoria"
@@ -1055,6 +1061,174 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 });
+
+// ==================== MODAIS DE TRANSAÇÕES (RECEITAS / DESPESAS) ====================
+function abrirModalTransacoes(tipo) {
+  const backdrop = document.getElementById("modal-transacoes-tipo");
+  backdrop.style.display = "flex";
+  const tituloEl = document.getElementById("transacoes-tipo-titulo");
+  tituloEl.textContent =
+    tipo === "RECEITA" ? "Receitas do Mês" : "Despesas do Mês";
+  listarTransacoesTipo(tipo);
+}
+
+function fecharModalTransacoesTipo() {
+  document.getElementById("modal-transacoes-tipo").style.display = "none";
+  document.getElementById("lista-transacoes-tipo").innerHTML = "";
+}
+
+async function listarTransacoesTipo(tipo) {
+  const lista = document.getElementById("lista-transacoes-tipo");
+  lista.innerHTML =
+    '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  try {
+    const { inicio, fim } = intervaloDoMes(MES_ANO);
+    const resposta = await fetch(
+      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
+    );
+    const dados = await resposta.json();
+    const filtradas = (dados || []).filter((t) => t.tipo_movimentacao === tipo);
+    if (!filtradas.length) {
+      lista.innerHTML =
+        '<div class="empty-state"><div class="empty-icon">📋</div><div>Nenhuma transação encontrada</div></div>';
+      return;
+    }
+    lista.innerHTML = filtradas
+      .map(
+        (t) => `
+        <div class="transacao-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <div style="font-size:20px;">${
+              tipo === "RECEITA" ? "💰" : "🛒"
+            }</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="font-weight:600;">${t.descricao}</div>
+              <div style="font-size:12px;opacity:.7;">${formatarData(
+                t.data_transacao
+              )} • ${t.categoria || "Sem categoria"}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="${
+              tipo === "RECEITA" ? "receita" : "despesa"
+            }" style="font-weight:600;">${
+          tipo === "RECEITA" ? "+" : "-"
+        } ${formatarMoeda(t.valor)}</div>
+            <button class="btn btn-danger" style="margin-top:4px;padding:4px 8px;font-size:12px;" onclick="removerTransacao(${
+              t.id_transacao
+            }, '${tipo}')">Remover</button>
+          </div>
+        </div>`
+      )
+      .join("");
+  } catch (e) {
+    lista.innerHTML =
+      '<div class="empty-state"><div class="empty-icon">❌</div><div>Erro ao carregar</div></div>';
+  }
+}
+
+async function removerTransacao(id_transacao, tipoRetorno) {
+  if (!confirm("Deseja remover esta transação?")) return;
+  try {
+    const res = await fetch(`${BASE_API}/transacoes`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_transacao }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success)
+      throw new Error(data.error || "Falha ao excluir");
+    mostrarNotificacao("success", "Removida", "Transação excluída");
+    carregarDashboard();
+    listarTransacoesTipo(tipoRetorno);
+  } catch (e) {
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+
+// ==================== DETALHES DO ORÇAMENTO ====================
+function fecharModalOrcamentoDetalhes() {
+  document.getElementById("modal-orcamento-detalhes").style.display = "none";
+}
+
+async function abrirDetalhesOrcamento(id_orcamento) {
+  const backdrop = document.getElementById("modal-orcamento-detalhes");
+  backdrop.style.display = "flex";
+  const titulo = document.getElementById("orcamento-detalhes-titulo");
+  const infoEl = document.getElementById("orcamento-detalhes-info");
+  const listaEl = document.getElementById("orcamento-detalhes-transacoes");
+  listaEl.innerHTML =
+    '<div class="loading"><div class="spinner"></div> Carregando transações...</div>';
+  const orc = dashboardOrcamentos.find((o) => o.id_orcamento == id_orcamento);
+  if (!orc) {
+    infoEl.textContent = "Orçamento não encontrado.";
+    return;
+  }
+  titulo.textContent = `Orçamento: ${orc.nome_categoria}`;
+  const percentual = parseFloat(orc.percentual_utilizado || 0);
+  infoEl.innerHTML = `
+    <div style="display:grid;gap:6px;">
+      <div><strong>Limite:</strong> ${formatarMoeda(orc.valor_limite)}</div>
+      <div><strong>Gasto:</strong> ${formatarMoeda(orc.gasto_realizado)}</div>
+      <div><strong>Restante:</strong> ${formatarMoeda(orc.gasto_restante)}</div>
+      <div><strong>Utilizado:</strong> ${percentual.toFixed(0)}%</div>
+      <div><strong>Status:</strong> ${orc.status}</div>
+      <div><strong>Período:</strong> ${formatarData(
+        orc.data_inicio
+      )} a ${formatarData(orc.data_fim)}</div>
+    </div>
+  `;
+
+  try {
+    const resposta = await fetch(
+      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${orc.data_inicio}&data_fim=${orc.data_fim}`
+    );
+    const dados = await resposta.json();
+    const despesasCat = (dados || []).filter(
+      (t) =>
+        t.id_categoria == orc.id_categoria && t.tipo_movimentacao === "DESPESA"
+    );
+    if (!despesasCat.length) {
+      listaEl.innerHTML =
+        '<div class="empty-state"><div class="empty-icon">📋</div><div>Nenhum gasto nesta categoria no período</div></div>';
+      return;
+    }
+    listaEl.innerHTML = despesasCat
+      .map(
+        (t) => `
+        <div class="transacao-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <div style="font-size:20px;">🛒</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="font-weight:600;">${t.descricao}</div>
+              <div style="font-size:12px;opacity:.7;">${formatarData(
+                t.data_transacao
+              )}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="despesa" style="font-weight:600;">- ${formatarMoeda(
+              t.valor
+            )}</div>
+            <button class="btn btn-danger" style="margin-top:4px;padding:4px 8px;font-size:12px;" onclick="removerTransacao(${
+              t.id_transacao
+            }, 'DESPESA')">Remover</button>
+          </div>
+        </div>`
+      )
+      .join("");
+  } catch (e) {
+    listaEl.innerHTML =
+      '<div class="empty-state"><div class="empty-icon">❌</div><div>Erro ao carregar transações</div></div>';
+  }
+}
+
+// Expor funções usadas em atributos onclick
+window.abrirModalTransacoes = abrirModalTransacoes;
+window.fecharModalTransacoesTipo = fecharModalTransacoesTipo;
+window.removerTransacao = removerTransacao;
+window.abrirDetalhesOrcamento = abrirDetalhesOrcamento;
+window.fecharModalOrcamentoDetalhes = fecharModalOrcamentoDetalhes;
 
 // Aplica configurações iniciais do usuário (ex.: ocultar saldo por padrão)
 async function carregarConfiguracoesIniciais() {

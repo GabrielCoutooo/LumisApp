@@ -85,4 +85,12 @@ class TransacaoRepository
         $stmt->bindParam(':id_transacao', $id_transacao, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    public function excluir($id_transacao)
+    {
+        $sql = 'DELETE FROM Transacao WHERE id_transacao = :id_transacao';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_transacao', $id_transacao, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
