@@ -1,8 +1,8 @@
 <?php
 // app/controllers/UserController.php
-
-// Adiciona autoload do Composer para PhpSpreadsheet
-require_once __DIR__ . '/../../vendor/autoload.php';
+// O autoload do Composer só é necessário para exportação (PhpSpreadsheet).
+// Carregamos sob demanda dentro de exportarDados() para evitar erro fatal
+// quando a pasta vendor ainda não existe (antes de rodar `composer install`).
 
 require_once __DIR__ . '/../models/UserRepository.php';
 
@@ -212,6 +212,17 @@ class UserController
         }
 
         if ($formato === 'xlsx') {
+            // Carrega autoload apenas se necessário
+            $autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+            if (!class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
+                if (file_exists($autoloadPath)) {
+                    require_once $autoloadPath;
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Dependências não instaladas. Execute "composer install" para habilitar exportação XLSX.']);
+                    return;
+                }
+            }
             // Exportação real XLSX com PhpSpreadsheet
             $timestamp = date('Ymd_His');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

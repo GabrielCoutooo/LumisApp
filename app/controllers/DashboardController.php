@@ -22,7 +22,16 @@ class DashboardController
             return;
         }
 
-        $data = $this->service->getDashboardData($id_usuario, $mes_ano);
-        echo json_encode($data);
+        try {
+            $data = $this->service->getDashboardData($id_usuario, $mes_ano);
+            echo json_encode($data);
+        } catch (Throwable $e) {
+            // Retorno amigável em produção; incluir trace simplificado para debug local
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Falha ao montar dashboard',
+                'detail' => $e->getMessage(),
+            ]);
+        }
     }
 }
