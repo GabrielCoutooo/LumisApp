@@ -14,6 +14,15 @@ let orcamentosAtuais = [];
 let saldoVisivel = true;
 let categoriasAtuais = []; // Armazena todas as categorias
 
+// ==================== MOEDA / CONVERSÃO ====================
+const BASE_CURRENCY = "BRL"; // Moeda base armazenada no backend
+let CURRENT_CURRENCY = "BRL"; // Moeda exibida na UI
+let currencyFactor = 1; // Quanto vale 1 BRL na moeda destino
+let currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: CURRENT_CURRENCY,
+});
+
 // ==================== UTILIDADES ====================
 
 function atualizarSaudacao() {
@@ -40,10 +49,10 @@ function atualizarSaudacao() {
 
 function formatarMoeda(valor) {
   if (!saldoVisivel) return "••••••";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(valor);
+  const valorNum = Number(valor) || 0;
+  const fator = currencyFactor || 1;
+  const convertido = valorNum * fator;
+  return currencyFormatter.format(convertido);
 }
 
 function formatarData(dataStr) {
@@ -936,8 +945,10 @@ function mostrarTela(tela) {
 
 // ==================== EVENTOS ====================
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   atualizarSaudacao();
+  initTheme();
+  await carregarConfiguracoesIniciais();
   carregarDashboard();
 
   // Event listener para formulário de transação
@@ -1045,6 +1056,189 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Aplica configurações iniciais do usuário (ex.: ocultar saldo por padrão)
+async function carregarConfiguracoesIniciais() {
+  try {
+    const resposta = await fetch(
+      `${BASE_API}/user/perfil?id_usuario=${ID_USUARIO}`
+    );
+    const dados = await resposta.json();
+    if (!resposta.ok) return;
+
+    const ocultarSaldoPorPadrao = !!dados.config_saldo_oculto;
+    saldoVisivel = !ocultarSaldoPorPadrao;
+
+    // Moeda preferida do usuário
+    const moeda = dados.config_moeda || BASE_CURRENCY;
+    await setCurrency(moeda);
+
+    // Atualiza ícone do botão de privacidade imediatamente
+    const toggleButton = document.getElementById("btn-privacy");
+    if (toggleButton) {
+      toggleButton.innerHTML = saldoVisivel
+        ? '<i class="fa-solid fa-eye"></i>'
+        : '<i class="fa-solid fa-lock"></i>';
+    }
+
+    // Se oculto, garante que o valor exibido esteja mascarado até o dashboard recarregar
+    if (!saldoVisivel) {
+      const saldoElement = document.getElementById("saldo-total");
+      if (saldoElement) saldoElement.textContent = "••••••";
+    }
+  } catch (e) {
+    // Em caso de erro de rede/API, mantém padrão (visível)
+  }
+}
+
+// ==================== TEMA CLARO/ESCURO ====================
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.setAttribute("data-theme", "dark");
+  } else {
+    root.removeAttribute("data-theme");
+  }
+
+  const btn = document.getElementById("btn-theme-toggle");
+  const txt = document.getElementById("theme-toggle-text");
+  if (btn && txt) {
+    if (theme === "dark") {
+      btn.innerHTML =
+        '<i class="fa-solid fa-sun"></i> <span id="theme-toggle-text">Tema claro</span>';
+    } else {
+      btn.innerHTML =
+        '<i class="fa-solid fa-moon"></i> <span id="theme-toggle-text">Tema escuro</span>';
+    }
+  }
+}
+
+function initTheme() {
+  try {
+    const saved = localStorage.getItem("lumis_theme");
+    const theme = saved || "light";
+    applyTheme(theme);
+  } catch (_) {
+    applyTheme("light");
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  applyTheme(next);
+  try {
+    localStorage.setItem("lumis_theme", next);
+  } catch (_) {}
+}
+
+window.toggleTheme = toggleTheme;
+
+// ==================== MOEDA: Helpers ====================
+async function setCurrency(currencyCode) {
+  try {
+    CURRENT_CURRENCY = (currencyCode || BASE_CURRENCY).toUpperCase();
+    currencyFormatter = new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: CURRENT_CURRENCY,
+    });
+    await updateCurrencyFactor();
+  } catch (e) {
+    CURRENT_CURRENCY = BASE_CURRENCY;
+    currencyFormatter = new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: BASE_CURRENCY,
+    });
+  }
+}
+
+async function updateCurrencyFactor() {
+  if (CURRENT_CURRENCY === BASE_CURRENCY) {
+    currencyFactor = 1;
+    return;
+  }
+
+  // Tenta usar cache recente (valido por 6h) - MAS APENAS SE FOR VÁLIDO
+  try {
+    const cacheKey = `lumis_rate_${BASE_CURRENCY}_${CURRENT_CURRENCY}`;
+    const cacheStr = localStorage.getItem(cacheKey);
+    if (cacheStr) {
+      const cached = JSON.parse(cacheStr);
+      const fatorCache = Number(cached.factor);
+      const idadeCache = Date.now() - (cached.ts || 0);
+      const cacheValido = idadeCache < 1000 * 60 * 60 * 6;
+
+      if (cached && fatorCache > 0 && fatorCache !== 1 && cacheValido) {
+        currencyFactor = fatorCache;
+        return;
+      }
+    }
+  } catch (e) {}
+
+  // Helper com timeout para evitar travas
+  const withTimeout = (promise, ms = 6000) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), ms)
+      ),
+    ]);
+
+  // Tenta múltiplas APIs públicas gratuitas, em ordem
+  let fator = NaN;
+
+  // 1) open.er-api.com (funciona sem chave API)
+  try {
+    const url1 = `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`;
+    const res1 = await withTimeout(fetch(url1));
+    const data1 = await res1.json();
+    if (
+      data1 &&
+      data1.result === "success" &&
+      data1.rates &&
+      data1.rates[CURRENT_CURRENCY] != null
+    ) {
+      fator = Number(data1.rates[CURRENT_CURRENCY]);
+    }
+  } catch (e) {}
+
+  if (!(fator > 0)) {
+    try {
+      // 2) jsdelivr fawazahmed currency-api
+      const baseLc = BASE_CURRENCY.toLowerCase();
+      const targetLc = CURRENT_CURRENCY.toLowerCase();
+      const url2 = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${baseLc}.json`;
+      const res2 = await withTimeout(fetch(url2));
+      const data2 = await res2.json();
+      if (data2 && data2[baseLc] && data2[baseLc][targetLc] != null) {
+        fator = Number(data2[baseLc][targetLc]);
+      }
+    } catch (e) {}
+  }
+
+  currencyFactor = fator > 0 ? fator : 1;
+
+  // Grava cache
+  try {
+    localStorage.setItem(
+      `lumis_rate_${BASE_CURRENCY}_${CURRENT_CURRENCY}`,
+      JSON.stringify({ factor: currencyFactor, ts: Date.now() })
+    );
+  } catch (e) {}
+}
+
+function refreshTelaAtual() {
+  const telaAtiva = document.querySelector(
+    '[id$="-screen"]:not([style*="display: none"])'
+  );
+  if (!telaAtiva) return;
+  const telaId = telaAtiva.id.replace("-screen", "");
+  if (telaId === "dashboard") carregarDashboard();
+  else if (telaId === "extrato") carregarExtrato();
+  else if (telaId === "orcamento") carregarOrcamento();
+  else if (telaId === "registrar") prepararTelaRegistro();
+  else if (telaId === "perfil") carregarPerfil();
+}
+
 // ==================== PERFIL ====================
 
 async function carregarPerfil() {
@@ -1098,6 +1292,16 @@ async function salvarConfiguracao(campo, valor) {
 
     if (!resposta.ok) {
       throw new Error(dados.error || "Erro ao salvar configuração");
+    }
+
+    // Aplicar imediatamente mudanças de moeda ANTES de mostrar notificação
+    if (campo === "config_moeda") {
+      console.log(`[CONFIG] Aplicando nova moeda: ${valor}`);
+      await setCurrency(String(valor || BASE_CURRENCY));
+      console.log(`[CONFIG] Moeda aplicada, fator: ${currencyFactor}`);
+      // Pequeno delay para garantir que a taxa foi obtida
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      refreshTelaAtual();
     }
 
     mostrarNotificacao("success", "Salvo!", "Configuração atualizada", 2000);

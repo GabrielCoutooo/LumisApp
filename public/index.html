@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumis - Gestão Financeira</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // Aplicar tema salvo o mais cedo possível para evitar flash branco
+        try {
+            var t = localStorage.getItem('lumis_theme');
+            if (t === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); }
+        } catch (e) { }
+    </script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -345,7 +352,7 @@
                                 <div class="config-label">Moeda</div>
                                 <div class="config-description">Moeda utilizada no aplicativo</div>
                             </div>
-                            <select class="form-control-small" id="config-moeda"
+                            <select class="form-control-small select-button" id="config-moeda"
                                 onchange="salvarConfiguracao('config_moeda', this.value)">
                                 <option value="BRL">R$ - Real Brasileiro</option>
                                 <option value="USD">$ - Dólar Americano</option>
@@ -358,7 +365,7 @@
                                 <div class="config-label">Primeiro Dia do Mês</div>
                                 <div class="config-description">Define o início do mês financeiro</div>
                             </div>
-                            <select class="form-control-small" id="config-primeiro-dia"
+                            <select class="form-control-small select-button" id="config-primeiro-dia"
                                 onchange="salvarConfiguracao('config_primeiro_dia_mes', parseInt(this.value))">
                                 <option value="1">Dia 1</option>
                                 <option value="5">Dia 5</option>
@@ -367,6 +374,18 @@
                                 <option value="20">Dia 20</option>
                                 <option value="25">Dia 25</option>
                             </select>
+                        </div>
+
+                        <!-- Alternância de Tema (posicionado logo abaixo do Primeiro Dia do Mês) -->
+                        <div class="perfil-config-item">
+                            <div class="config-info">
+                                <div class="config-label">Tema</div>
+                                <div class="config-description">Alterne entre tema claro e escuro</div>
+                            </div>
+                            <button id="btn-theme-toggle" class="theme-toggle" onclick="toggleTheme()">
+                                <i class="fa-solid fa-moon"></i>
+                                <span id="theme-toggle-text">Tema escuro</span>
+                            </button>
                         </div>
                     </div>
                 </div>
