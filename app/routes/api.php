@@ -17,6 +17,9 @@ $dynamicRoutes = [
 
 // Rotas estáticas
 $routes = [
+    '/api/user/register' => [
+        'POST' => ['controller' => 'UserController', 'method' => 'registerUser']
+    ],
     '/api/login' => [
         'POST' => ['controller' => 'AuthController', 'method' => 'login']
     ],

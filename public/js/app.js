@@ -1,8 +1,11 @@
+// @ts-nocheck
 // Lumis - Sistema de Gestão Financeira - JavaScript
 
 // Configuração da API
-const BASE_API = "http://localhost/LumisApp/public/api.php/api";
-const ID_USUARIO = 1;
+const BASE_API = "http://192.168.15.16/LumisApp/public/api.php"; // Troque pelo seu IPv4 interno
+let ID_USUARIO = localStorage.getItem("id_usuario")
+  ? Number(localStorage.getItem("id_usuario"))
+  : null;
 let MES_ANO = new Date().toISOString().slice(0, 7); // Mês atual dinâmico (YYYY-MM)
 
 let todasTransacoes = [];
@@ -164,6 +167,13 @@ function atualizarTituloMes() {
 
 window.navegarMes = navegarMes;
 window.voltarMesAtual = voltarMesAtual;
+// ==================== LOGOUT ====================
+function logoutUsuario() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = "/LumisApp/public/login.html";
+}
+window.logoutUsuario = logoutUsuario;
 // ==================== PRIVACIDADE ====================
 
 function toggleVisibilidadeSaldo() {
@@ -183,7 +193,7 @@ function toggleVisibilidadeSaldo() {
 async function carregarDashboardSaldo() {
   try {
     const resposta = await fetch(
-      `${BASE_API}/dashboard?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
+      `${BASE_API}/api/dashboard?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
     );
     const dados = await resposta.json();
     document.getElementById("saldo-total").textContent = formatarMoeda(
@@ -200,8 +210,19 @@ async function carregarDashboard() {
   try {
     atualizarTituloMes();
 
+    // Atualizar saudação do header com nome do usuário
+    try {
+      const perfilResp = await fetch(
+        `${BASE_API}/api/user/perfil?id_usuario=${ID_USUARIO}`
+      );
+      const perfilData = await perfilResp.json();
+      if (perfilResp.ok && perfilData.usuario && perfilData.usuario.nome) {
+        atualizarSaudacaoNome(perfilData.usuario.nome);
+      }
+    } catch (e) {}
+
     const resposta = await fetch(
-      `${BASE_API}/dashboard?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
+      `${BASE_API}/api/dashboard?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
     );
     const dados = await resposta.json();
 
@@ -337,7 +358,7 @@ async function carregarExtrato() {
   try {
     const { inicio, fim } = intervaloDoMes(MES_ANO);
     const resposta = await fetch(
-      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
+      `${BASE_API}/api/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
     );
     const dados = await resposta.json();
 
@@ -422,7 +443,7 @@ function filtrarTransacoes(tipo) {
 
 async function carregarCategoriasDespesa() {
   const resposta = await fetch(
-    `${BASE_API}/categorias?id_usuario=${ID_USUARIO}&tipo=DESPESA`
+    `${BASE_API}/api/categorias?id_usuario=${ID_USUARIO}&tipo=DESPESA`
   );
   categoriasDespesa = await resposta.json();
   return categoriasDespesa;
@@ -432,7 +453,7 @@ async function carregarOrcamento() {
   try {
     // Buscar orçamentos do mês
     const resposta = await fetch(
-      `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
+      `${BASE_API}/api/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
     );
     const orcamentos = await resposta.json();
     orcamentosAtuais = orcamentos || [];
@@ -462,7 +483,7 @@ async function copiarOrcamentoMesAnterior() {
 
     // Buscar orçamentos do mês anterior
     const resposta = await fetch(
-      `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${mesAnteriorStr}`
+      `${BASE_API}/api/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${mesAnteriorStr}`
     );
     const orcamentosMesAnterior = await resposta.json();
 
@@ -481,7 +502,7 @@ async function copiarOrcamentoMesAnterior() {
       .filter((orc) => !categoriasExistentes.has(orc.id_categoria))
       .map(async (orc) => {
         try {
-          const res = await fetch(`${BASE_API}/orcamento`, {
+          const res = await fetch(`${BASE_API}/api/orcamento`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -508,7 +529,7 @@ async function copiarOrcamentoMesAnterior() {
 
       // Recarregar orçamentos atualizados
       const respostaAtualizada = await fetch(
-        `${BASE_API}/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
+        `${BASE_API}/api/orcamento?id_usuario=${ID_USUARIO}&mes_ano=${MES_ANO}`
       );
       orcamentosAtuais = (await respostaAtualizada.json()) || [];
     }
@@ -679,7 +700,7 @@ async function enviarOrcamento() {
             data_fim: fim,
             ativo: ativo,
           };
-    const res = await fetch(`${BASE_API}/orcamento`, {
+    const res = await fetch(`${BASE_API}/api/orcamento`, {
       method: mode === "edit" ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -711,7 +732,7 @@ async function excluirOrcamentoPorIndice(indice) {
   }
 
   try {
-    const res = await fetch(`${BASE_API}/orcamento`, {
+    const res = await fetch(`${BASE_API}/api/orcamento`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_orcamento: Number(orc.id_orcamento) }),
@@ -756,7 +777,7 @@ async function editarOrcamentoRapido(
 
     // Se já existe orçamento, atualizar; senão, criar
     if (idOrcamento && idOrcamento !== "null") {
-      const res = await fetch(`${BASE_API}/orcamento`, {
+      const res = await fetch(`${BASE_API}/api/orcamento`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -770,7 +791,7 @@ async function editarOrcamentoRapido(
         throw new Error(data.error || "Falha ao atualizar orçamento");
       }
     } else {
-      const res = await fetch(`${BASE_API}/orcamento`, {
+      const res = await fetch(`${BASE_API}/api/orcamento`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -803,7 +824,7 @@ async function limparOrcamento(idOrcamento, nomeCategoria) {
   }
 
   try {
-    const res = await fetch(`${BASE_API}/orcamento`, {
+    const res = await fetch(`${BASE_API}/api/orcamento`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_orcamento: Number(idOrcamento) }),
@@ -827,9 +848,9 @@ async function limparOrcamento(idOrcamento, nomeCategoria) {
 async function carregarDadosRegistro() {
   try {
     const [contasRes, despesaRes, receitaRes] = await Promise.all([
-      fetch(`${BASE_API}/contas?id_usuario=${ID_USUARIO}`),
-      fetch(`${BASE_API}/categorias?id_usuario=${ID_USUARIO}&tipo=DESPESA`),
-      fetch(`${BASE_API}/categorias?id_usuario=${ID_USUARIO}&tipo=RECEITA`),
+      fetch(`${BASE_API}/api/contas?id_usuario=${ID_USUARIO}`),
+      fetch(`${BASE_API}/api/categorias?id_usuario=${ID_USUARIO}&tipo=DESPESA`),
+      fetch(`${BASE_API}/api/categorias?id_usuario=${ID_USUARIO}&tipo=RECEITA`),
     ]);
 
     contasUsuario = await contasRes.json();
@@ -989,7 +1010,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      let endpoint = `${BASE_API}/transacoes`;
+      let endpoint = `${BASE_API}/api/transacoes`;
       let payload = {
         id_usuario: ID_USUARIO,
         valor: valor,
@@ -1007,7 +1028,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
           return;
         }
-        endpoint = `${BASE_API}/transferencia`;
+        endpoint = `${BASE_API}/api/transferencia`;
         payload = {
           ...payload,
           id_conta_origem,
@@ -1084,7 +1105,7 @@ async function listarTransacoesTipo(tipo) {
   try {
     const { inicio, fim } = intervaloDoMes(MES_ANO);
     const resposta = await fetch(
-      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
+      `${BASE_API}/api/extrato?id_usuario=${ID_USUARIO}&data_inicio=${inicio}&data_fim=${fim}`
     );
     const dados = await resposta.json();
     const filtradas = (dados || []).filter((t) => t.tipo_movimentacao === tipo);
@@ -1130,7 +1151,7 @@ async function listarTransacoesTipo(tipo) {
 async function removerTransacao(id_transacao, tipoRetorno) {
   if (!confirm("Deseja remover esta transação?")) return;
   try {
-    const res = await fetch(`${BASE_API}/transacoes`, {
+    const res = await fetch(`${BASE_API}/api/transacoes`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_transacao }),
@@ -1181,7 +1202,7 @@ async function abrirDetalhesOrcamento(id_orcamento) {
 
   try {
     const resposta = await fetch(
-      `${BASE_API}/extrato?id_usuario=${ID_USUARIO}&data_inicio=${orc.data_inicio}&data_fim=${orc.data_fim}`
+      `${BASE_API}/api/extrato?id_usuario=${ID_USUARIO}&data_inicio=${orc.data_inicio}&data_fim=${orc.data_fim}`
     );
     const dados = await resposta.json();
     const despesasCat = (dados || []).filter(
@@ -1232,9 +1253,13 @@ window.fecharModalOrcamentoDetalhes = fecharModalOrcamentoDetalhes;
 
 // Aplica configurações iniciais do usuário (ex.: ocultar saldo por padrão)
 async function carregarConfiguracoesIniciais() {
+  if (!ID_USUARIO) {
+    window.location.href = "login.html";
+    return;
+  }
   try {
     const resposta = await fetch(
-      `${BASE_API}/user/perfil?id_usuario=${ID_USUARIO}`
+      `${BASE_API}/api/user/perfil?id_usuario=${ID_USUARIO}`
     );
     const dados = await resposta.json();
     if (!resposta.ok) return;
@@ -1414,11 +1439,33 @@ function refreshTelaAtual() {
 }
 
 // ==================== PERFIL ====================
+// Atualiza saudação do header com nome do usuário
+function atualizarSaudacaoNome(nomeCompleto) {
+  let nomes = (nomeCompleto || "").trim().split(/\s+/);
+  let saudacaoNome = "-";
+  if (nomes.length > 1) {
+    let segundo = nomes[1].toLowerCase();
+    if (
+      ["da", "de", "do", "das", "dos"].includes(segundo) &&
+      nomes.length > 2
+    ) {
+      saudacaoNome = `${nomes[0]} ${nomes[1]} ${nomes[2]}`;
+    } else {
+      saudacaoNome = `${nomes[0]} ${nomes[1]}`;
+    }
+  } else if (nomes.length === 1) {
+    saudacaoNome = nomes[0];
+  }
+  let saudacaoSpan = document.getElementById("saudacao-nome");
+  if (saudacaoSpan) {
+    saudacaoSpan.textContent = `Olá, ${saudacaoNome}`;
+  }
+}
 
 async function carregarPerfil() {
   try {
     const resposta = await fetch(
-      `${BASE_API}/user/perfil?id_usuario=${ID_USUARIO}`
+      `${BASE_API}/api/user/perfil?id_usuario=${ID_USUARIO}`
     );
     const dados = await resposta.json();
 
@@ -1427,20 +1474,25 @@ async function carregarPerfil() {
     }
 
     // Atualizar informações na tela
-    document.getElementById("perfil-nome").textContent = dados.nome || "-";
-    document.getElementById("perfil-email").textContent = dados.email || "-";
+    const usuario = dados.usuario || {};
+    // Atualizar informações na tela
+    let nomeCompleto = usuario.nome || "";
+    document.getElementById("perfil-nome").textContent = nomeCompleto || "-";
+    atualizarSaudacaoNome(nomeCompleto);
+    document.getElementById("perfil-email").textContent = usuario.email || "-";
 
-    const dataRegistro = dados.data_registro
-      ? new Date(dados.data_registro).toLocaleDateString("pt-BR")
+    const dataRegistro = usuario.data_registro
+      ? new Date(usuario.data_registro).toLocaleDateString("pt-BR")
       : "-";
     document.getElementById("perfil-data-registro").textContent = dataRegistro;
 
     // Configurações
     document.getElementById("config-saldo-oculto").checked =
-      dados.config_saldo_oculto || false;
+      usuario.config_saldo_oculto || false;
     document.getElementById("config-notificacoes").checked =
-      dados.config_notificacoes !== false;
-    document.getElementById("config-moeda").value = dados.config_moeda || "BRL";
+      usuario.config_notificacoes !== false;
+    document.getElementById("config-moeda").value =
+      usuario.config_moeda || "BRL";
     document.getElementById("config-primeiro-dia").value =
       dados.config_primeiro_dia_mes || 1;
   } catch (error) {
@@ -1456,7 +1508,7 @@ async function salvarConfiguracao(campo, valor) {
       [campo]: valor,
     };
 
-    const resposta = await fetch(`${BASE_API}/user/configuracoes`, {
+    const resposta = await fetch(`${BASE_API}/api/user/configuracoes`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1519,7 +1571,7 @@ async function salvarPerfilEditado() {
       senha_confirmacao: senha,
     };
 
-    const resposta = await fetch(`${BASE_API}/user/perfil`, {
+    const resposta = await fetch(`${BASE_API}/api/user/perfil`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1584,7 +1636,7 @@ async function salvarNovaSenha() {
       senha_nova: senhaNova,
     };
 
-    const resposta = await fetch(`${BASE_API}/user/senha`, {
+    const resposta = await fetch(`${BASE_API}/api/user/senha`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1631,7 +1683,7 @@ async function confirmarExclusaoConta() {
       senha_confirmacao: senha,
     };
 
-    const resposta = await fetch(`${BASE_API}/user/conta`, {
+    const resposta = await fetch(`${BASE_API}/api/user/conta`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1647,12 +1699,11 @@ async function confirmarExclusaoConta() {
       "success",
       "Conta Excluída",
       "Sua conta foi excluída com sucesso",
-      3000
+      1500
     );
-
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
+    fecharModalExcluirConta();
+    localStorage.clear();
+    window.location.href = "login.html";
   } catch (error) {
     console.error("Erro ao excluir conta:", error);
     mostrarNotificacao("danger", "Erro", error.message);
@@ -1689,7 +1740,9 @@ async function carregarContasGerenciar() {
     '<div class="loading"><div class="spinner"></div> Carregando...</div>';
 
   try {
-    const resposta = await fetch(`${BASE_API}/contas?id_usuario=${ID_USUARIO}`);
+    const resposta = await fetch(
+      `${BASE_API}/api/contas?id_usuario=${ID_USUARIO}`
+    );
     const dados = await resposta.json();
 
     if (!resposta.ok) throw new Error(dados.error);
@@ -1704,28 +1757,36 @@ async function carregarContasGerenciar() {
     contasUsuario = dados;
 
     lista.innerHTML = dados
-      .map(
-        (conta) => `
-      <div class="item-gerenciar">
-        <div class="item-gerenciar-info">
-          <div class="item-gerenciar-nome">${conta.nome}</div>
-          <div class="item-gerenciar-detalhes">
-            ${conta.tipo_conta} - Saldo: ${formatarMoeda(conta.saldo_inicial)}
-          </div>
-        </div>
-        <div class="item-gerenciar-acoes">
-          <button class="btn-icon" onclick="editarConta(${conta.id_conta})">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <button class="btn-icon btn-icon-danger" onclick="excluirContaComConfirmacao(${
-            conta.id_conta
-          }, '${conta.nome.replace(/'/g, "\\'")}')">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `
-      )
+      .map(function (c) {
+        return (
+          '<div class="conta-item" style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f9fa;border-radius:8px;margin-bottom:10px;">' +
+          "<div>" +
+          '<div style="font-weight:600;margin-bottom:5px;">' +
+          c.nome +
+          "</div>" +
+          '<div style="font-size:12px;color:#666;">Tipo: ' +
+          c.tipo_conta +
+          " | Saldo: " +
+          formatarMoeda(c.saldo_inicial || 0) +
+          "</div>" +
+          "</div>" +
+          '<div style="display:flex;gap:8px;">' +
+          '<button class="btn" style="padding:6px 12px;" onclick="editarConta(' +
+          c.id_conta +
+          ')">' +
+          '<i class="fa-solid fa-edit"></i> Editar' +
+          "</button>" +
+          '<button class="btn btn-danger" style="padding:6px 12px;" onclick="excluirContaComConfirmacao(' +
+          c.id_conta +
+          ", '" +
+          c.nome.replace(/'/g, "\\'") +
+          "')\">" +
+          '<i class="fa-solid fa-trash"></i> Excluir' +
+          "</button>" +
+          "</div>" +
+          "</div>"
+        );
+      })
       .join("");
   } catch (error) {
     console.error("Erro ao carregar contas:", error);
@@ -1789,7 +1850,7 @@ async function salvarConta() {
 
   const mode = id_conta ? "edit" : "create";
   const method = mode === "edit" ? "PUT" : "POST";
-  const endpoint = `${BASE_API}/contas`;
+  const endpoint = BASE_API + "/api/contas";
 
   const payload = {
     id_usuario: ID_USUARIO,
@@ -1813,14 +1874,16 @@ async function salvarConta() {
 
     if (!res.ok || !data.success) {
       throw new Error(
-        data.error || `Falha ao ${mode === "edit" ? "editar" : "criar"} conta.`
+        data.error
+          ? data.error
+          : "Falha ao " + (mode === "edit" ? "editar" : "criar") + " conta."
       );
     }
 
     mostrarNotificacao(
       "success",
       "Sucesso!",
-      `Conta ${nome} salva com sucesso.`
+      "Conta " + nome + " salva com sucesso."
     );
     fecharFormConta();
     carregarContasGerenciar();
@@ -1836,7 +1899,9 @@ function confirmarExclusaoConta() {
 
   if (
     !confirm(
-      `Tem certeza que deseja EXCLUIR a conta "${nome}"? Se houver transações vinculadas, a exclusão falhará.`
+      "Tem certeza que deseja EXCLUIR a conta '" +
+        nome +
+        "'? Se houver transações vinculadas, a exclusão falhará."
     )
   ) {
     return;
@@ -1846,7 +1911,7 @@ function confirmarExclusaoConta() {
 }
 
 function excluirContaComConfirmacao(idConta, nomeConta) {
-  if (!confirm(`Tem certeza que deseja excluir a conta "${nomeConta}"?`)) {
+  if (!confirm('Tem certeza que deseja excluir a conta "' + nomeConta + '"?')) {
     return;
   }
   excluirConta(idConta);
@@ -1854,7 +1919,7 @@ function excluirContaComConfirmacao(idConta, nomeConta) {
 
 async function excluirConta(idConta) {
   try {
-    const resposta = await fetch(`${BASE_API}/contas`, {
+    const resposta = await fetch(BASE_API + "/api/contas", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_conta: Number(idConta) }),
@@ -1914,12 +1979,13 @@ async function carregarCategoriasGerenciar() {
 
   try {
     const resposta = await fetch(
-      `${BASE_API}/categorias?id_usuario=${ID_USUARIO}`
+      BASE_API + "/api/categories?id_usuario=" + ID_USUARIO
     );
     const categorias = await resposta.json();
 
     if (!resposta.ok) {
-      lista.innerHTML = `<div class='empty-state'>Erro ao carregar categorias</div>`;
+      lista.innerHTML =
+        '<div class="empty-state">Erro ao carregar categorias</div>';
       return;
     }
 
@@ -1933,28 +1999,34 @@ async function carregarCategoriasGerenciar() {
     categoriasAtuais = categorias;
 
     lista.innerHTML = categorias
-      .map(
-        (cat) => `
-      <div class="categoria-item" style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f9fa;border-radius:8px;margin-bottom:10px;">
-        <div>
-          <div style="font-weight:600;margin-bottom:5px;">${cat.nome}</div>
-          <div style="font-size:12px;color:#666;">Tipo: ${cat.tipo}</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" style="padding:6px 12px;" onclick="editarCategoria(${
-            cat.id_categoria
-          })">
-            <i class="fa-solid fa-edit"></i> Editar
-          </button>
-          <button class="btn btn-danger" style="padding:6px 12px;" onclick="excluirCategoriaComConfirmacao(${
-            cat.id_categoria
-          }, '${cat.nome.replace(/'/g, "\\'")}')">
-            <i class="fa-solid fa-trash"></i> Excluir
-          </button>
-        </div>
-      </div>
-    `
-      )
+      .map(function (cat) {
+        return (
+          '<div class="categoria-item" style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f9fa;border-radius:8px;margin-bottom:10px;">' +
+          "<div>" +
+          '<div style="font-weight:600;margin-bottom:5px;">' +
+          cat.nome +
+          "</div>" +
+          '<div style="font-size:12px;color:#666;">Tipo: ' +
+          cat.tipo +
+          "</div>" +
+          "</div>" +
+          '<div style="display:flex;gap:8px;">' +
+          '<button class="btn" style="padding:6px 12px;" onclick="editarCategoria(' +
+          cat.id_categoria +
+          ')">' +
+          '<i class="fa-solid fa-edit"></i> Editar' +
+          "</button>" +
+          '<button class="btn btn-danger" style="padding:6px 12px;" onclick="excluirCategoriaComConfirmacao(' +
+          cat.id_categoria +
+          ", '" +
+          cat.nome.replace(/'/g, "\\'") +
+          "')\">" +
+          '<i class="fa-solid fa-trash"></i> Excluir' +
+          "</button>" +
+          "</div>" +
+          "</div>"
+        );
+      })
       .join("");
   } catch (error) {
     console.error("Erro ao carregar categorias:", error);
@@ -2007,17 +2079,18 @@ async function carregarDespesasRecorrencia() {
   try {
     // Buscar transações de TODOS os meses (sem filtro de mes_ano)
     const resposta = await fetch(
-      `${BASE_API}/despesas?id_usuario=${ID_USUARIO}`
+      BASE_API + "/api/despesas?id_usuario=" + ID_USUARIO
     );
     const dados = await resposta.json();
     if (!resposta.ok) {
-      lista.innerHTML = `<div class='empty-state'>Erro: ${
-        dados.error || resposta.status
-      }</div>`;
+      lista.innerHTML =
+        '<div class="empty-state">Erro: ' +
+        (dados.error || resposta.status) +
+        "</div>";
       return;
     }
     if (!Array.isArray(dados)) {
-      lista.innerHTML = `<div class='empty-state'>Resposta inesperada</div>`;
+      lista.innerHTML = '<div class="empty-state">Resposta inesperada</div>';
       return;
     }
     if (!dados.length) {
@@ -2031,7 +2104,14 @@ async function carregarDespesasRecorrencia() {
     const chaves = new Set();
 
     for (const d of dados) {
-      const chave = `${d.descricao}-${d.valor}-${d.id_categoria}-${d.tipo_movimentacao}`;
+      const chave =
+        d.descricao +
+        "-" +
+        d.valor +
+        "-" +
+        d.id_categoria +
+        "-" +
+        d.tipo_movimentacao;
       if (!chaves.has(chave)) {
         chaves.add(chave);
         transacoesUnicas.push(d);
@@ -2039,47 +2119,53 @@ async function carregarDespesasRecorrencia() {
     }
 
     lista.innerHTML = transacoesUnicas
-      .map((d) => {
-        const jaRecorrente =
+      .map(function (d) {
+        var jaRecorrente =
           String(d.recorrente) === "1" || d.recorrente === true;
-        const tipoLabel =
+        var tipoLabel =
           d.tipo_movimentacao === "RECEITA" ? "💰 Receita" : "💸 Despesa";
-        const tipoClass =
+        var tipoClass =
           d.tipo_movimentacao === "RECEITA" ? "tipo-receita" : "tipo-despesa";
-
-        return `
-        <div class="item-recorrencia">
-          <div class="info">
-            <div class="descricao">${
-              d.descricao || "Sem descrição"
-            } <span class="${tipoClass}" style="font-size:0.85em;opacity:0.7;">${tipoLabel}</span></div>
-            <div class="meta">
-              <span class="valor ${
-                jaRecorrente ? "recorrente" : ""
-              }">${formatarMoeda(d.valor || 0)}</span>
-              <span class="data">${formatarData(
-                d.data_transacao || MES_ANO + "-01"
-              )}</span>
-              ${
-                jaRecorrente
-                  ? '<span class="tag-recorrente">Recorrente</span>'
-                  : ""
-              }
-            </div>
-          </div>
-          <div class="acoes">
-            ${
-              jaRecorrente
-                ? `<button class="btn" style="background:#EF4444;" onclick="removerRecorrencia(${d.id_transacao})">Remover Recorrência</button>`
-                : `<button class="btn" onclick="tornarDespesaRecorrente(${d.id_transacao})">Tornar Recorrente</button>`
-            }
-          </div>
-        </div>
-      `;
+        return (
+          '<div class="item-recorrencia">' +
+          '<div class="info">' +
+          '<div class="descricao">' +
+          (d.descricao || "Sem descrição") +
+          ' <span class="' +
+          tipoClass +
+          '" style="font-size:0.85em;opacity:0.7;">' +
+          tipoLabel +
+          "</span></div>" +
+          '<div class="meta">' +
+          '<span class="valor ' +
+          (jaRecorrente ? "recorrente" : "") +
+          '">' +
+          formatarMoeda(d.valor || 0) +
+          "</span>" +
+          '<span class="data">' +
+          formatarData(d.data_transacao || MES_ANO + "-01") +
+          "</span>" +
+          (jaRecorrente
+            ? '<span class="tag-recorrente">Recorrente</span>'
+            : "") +
+          "</div>" +
+          "</div>" +
+          '<div class="acoes">' +
+          (jaRecorrente
+            ? '<button class="btn" style="background:#EF4444;" onclick="removerRecorrencia(' +
+              d.id_transacao +
+              ')">Remover Recorrência</button>'
+            : '<button class="btn" onclick="tornarDespesaRecorrente(' +
+              d.id_transacao +
+              ')">Tornar Recorrente</button>') +
+          "</div>" +
+          "</div>"
+        );
       })
       .join("");
   } catch (e) {
-    lista.innerHTML = `<div class='empty-state'>Erro ao carregar despesas</div>`;
+    lista.innerHTML =
+      '<div class="empty-state">Erro ao carregar despesas</div>';
     console.error("Erro ao carregar despesas recorrência:", e);
   }
 }
@@ -2112,7 +2198,7 @@ window.fecharModalGerenciarRecorrencias = fecharModalGerenciarRecorrencias;
 
 async function gerarRecorrenciasAutomaticas() {
   try {
-    const resposta = await fetch(`${BASE_API}/recorrencias/gerar`, {
+    const resposta = await fetch(BASE_API + "/api/recorrencias/gerar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_usuario: ID_USUARIO, mes_ano: MES_ANO }),
@@ -2154,7 +2240,7 @@ async function salvarCategoria() {
 
   const mode = id_categoria ? "edit" : "create";
   const method = mode === "edit" ? "PUT" : "POST";
-  let endpoint = `${BASE_API}/categorias`;
+  let endpoint = BASE_API + "/api/categorias";
 
   const payload = {
     id_usuario: ID_USUARIO,
@@ -2179,14 +2265,14 @@ async function salvarCategoria() {
     if (!res.ok || !data.success) {
       throw new Error(
         data.error ||
-          `Falha ao ${mode === "edit" ? "editar" : "criar"} categoria.`
+          "Falha ao " + (mode === "edit" ? "editar" : "criar") + " categoria."
       );
     }
 
     mostrarNotificacao(
       "success",
       "Sucesso!",
-      `Categoria ${nome} salva com sucesso.`
+      "Categoria " + nome + " salva com sucesso."
     );
     fecharFormCategoria();
     carregarCategoriasGerenciar(); // Recarrega a lista
@@ -2202,7 +2288,9 @@ function confirmarExclusaoCategoria() {
 
   if (
     !confirm(
-      `Tem certeza que deseja EXCLUIR a categoria "${nome}"? Se houver transações vinculadas, a exclusão falhará.`
+      "Tem certeza que deseja EXCLUIR a categoria '" +
+        nome +
+        "'? Se houver transações vinculadas, a exclusão falhará."
     )
   ) {
     return;
@@ -2213,7 +2301,9 @@ function confirmarExclusaoCategoria() {
 
 function excluirCategoriaComConfirmacao(idCategoria, nomeCategoria) {
   if (
-    !confirm(`Tem certeza que deseja excluir a categoria "${nomeCategoria}"?`)
+    !confirm(
+      'Tem certeza que deseja excluir a categoria "' + nomeCategoria + '"?'
+    )
   ) {
     return;
   }
@@ -2222,7 +2312,7 @@ function excluirCategoriaComConfirmacao(idCategoria, nomeCategoria) {
 
 async function excluirCategoria(idCategoria) {
   try {
-    const resposta = await fetch(`${BASE_API}/categorias`, {
+    const resposta = await fetch(BASE_API + "/api/categorias", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_categoria: Number(idCategoria) }),
@@ -2277,7 +2367,7 @@ window.mostrarTela = mostrarTela;
 async function tornarDespesaRecorrente(idTransacao) {
   if (!idTransacao) return;
   try {
-    const resposta = await fetch(`${BASE_API}/recorrencia`, {
+    const resposta = await fetch(BASE_API + "/api/recorrencia", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2307,7 +2397,7 @@ async function removerRecorrencia(idTransacao) {
     return;
 
   try {
-    const resposta = await fetch(`${BASE_API}/recorrencia/remover`, {
+    const resposta = await fetch(BASE_API + "/api/recorrencia/remover", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2342,7 +2432,7 @@ async function marcarComoEfetuada(idTransacao) {
   }
 
   try {
-    const resposta = await fetch(`${BASE_API}/transacoes`, {
+    const resposta = await fetch(BASE_API + "/api/transacoes", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

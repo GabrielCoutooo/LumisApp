@@ -11,6 +11,25 @@ class UserRepository
         $this->conn = $database->getConnection();
     }
 
+    public function buscarPorEmail($email)
+    {
+        $sql = "SELECT * FROM Usuario WHERE email = :email";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function criarUsuario($nome, $email, $senha_hash)
+    {
+        $sql = "INSERT INTO Usuario (nome, email, senha_hash) VALUES (:nome, :email, :senha_hash)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':nome', $nome);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':senha_hash', $senha_hash);
+        return $stmt->execute();
+    }
+
     public function buscarPorId($id_usuario)
     {
         $sql = "SELECT id_usuario, nome, email, data_criacao as data_registro, 

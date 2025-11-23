@@ -1,4 +1,15 @@
 <?php
+// Tratamento global de erros para sempre retornar JSON
+set_exception_handler(function ($e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+    exit;
+});
+set_error_handler(function ($errno, $errstr) {
+    http_response_code(500);
+    echo json_encode(['error' => $errstr]);
+    exit;
+});
 // public/api.php - Front Controller da API
 
 // Carrega configuração do banco

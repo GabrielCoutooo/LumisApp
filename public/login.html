@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumisApp - Login</title>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="login-bg-gradient"></div>
+    <div class="login-container">
+        <div class="login-logo">
+            <i class="fa-solid fa-coins"></i>
+            <span>LumisApp</span>
+        </div>
+        <div class="login-card">
+            <h2>Bem-vindo!</h2>
+            <p class="login-subtitle">Acesse sua conta para continuar</p>
+            <form id="login-form" autocomplete="off">
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="Seu email">
+                </div>
+                <div class="input-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required placeholder="Sua senha">
+                </div>
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+            <div class="login-links">
+                <a href="#" onclick="abrirRecuperarSenha()">Esqueci minha senha</a>
+                <br>
+                <button type="button" class="btn-cadastro-link" onclick="window.location.href='cadastro.html'">Criar
+                    nova conta</button>
+            </div>
+        </div>
+        <footer class="login-footer">© 2025 LumisApp</footer>
+    </div>
+    <script src="js/login.js"></script>
+</body>
+
+</html>

@@ -20,46 +20,45 @@
 
 LumisApp é um sistema de gestão financeira pessoal, com backend em PHP (MVC + Repository), API RESTful, frontend mobile planejado e documentação completa.
 
-**Principais Funcionalidades:**
+**Principais Funcionalidades (2025):**
 
-- ✅ Autenticação de usuários
-- ✅ Gestão completa de contas bancárias (CRUD)
-- ✅ Registro e categorização de transações
-- ✅ Dashboard financeiro dinâmico por mês
-- ✅ Orçamentos fixos por categoria (Alimentação, Saúde, Lazer, etc.)
-- ✅ Sistema de transações pendentes e próximos pagamentos
-- ✅ Filtros dinâmicos de extrato (por mês e tipo)
-- ✅ Gestão de categorias personalizadas
-- ✅ Relatórios e exportação de dados (CSV/XLSX)
-- ✅ Confirmações antes de ações críticas
-- ✅ Formatação automática de datas (DD/MM/YYYY)
+- ✅ Integração mobile (acesso via navegador do celular na rede local)
+- ✅ Pronto para empacotamento como app mobile (Cordova/Capacitor)
+- ✅ Interface responsiva e moderna
 
 ---
 
-## 2. Instalação e Configuração
-
-### Pré-requisitos
-
-- XAMPP (Apache + MySQL + PHP 8.2+)
-- Composer
 - Navegador moderno
 
 ### Passos
 
 1. Clone o projeto para `C:\xampp\htdocs\LumisApp`
-2. Instale dependências:
-   ```bash
-   cd C:\xampp\htdocs\LumisApp
-   composer install
-   ```
-3. Configure o banco de dados:
-   - Crie o banco `lumis` no phpMyAdmin
-   - Importe `database/banco.sql` e (opcional) `database/dados_teste.sql`
-4. Edite `app/config/database.php` com suas credenciais
-5. Inicie o Apache pelo XAMPP
-6. Acesse:
-   - Interface: `http://localhost/LumisApp/public/index.html`
-   - API: `http://localhost/LumisApp/public/api.php/api/...`
+2. **Habilite a extensão GD do PHP (necessária para exportação XLSX):**
+
+- Abra o arquivo `C:\xampp\php\php.ini`.
+- Procure por `;extension=gd` e remova o ponto e vírgula, ficando `extension=gd`.
+- Salve o arquivo e reinicie o Apache pelo XAMPP.
+
+3. Instale dependências:
+
+```bash
+cd C:\xampp\htdocs\LumisApp
+composer install
+```
+
+- Se aparecer erro relacionado à extensão GD, repita o passo 2.
+
+4. Configure o banco de dados:
+
+- Crie o banco `lumis` no phpMyAdmin
+- Importe `database/banco.sql` e (opcional) `database/dados_teste.sql`
+
+5. Edite `app/config/database.php` com suas credenciais
+6. Inicie o Apache pelo XAMPP
+7. Acesse:
+
+- Interface: `http://localhost/LumisApp/public/index.html`
+- API: `http://localhost/LumisApp/public/api.php/api/...`
 
 ---
 
@@ -1106,31 +1105,9 @@ O backend foi implementado em PHP seguindo MVC, com controllers, repositories, s
 
 ### Versão 2.5 (21/11/2025)
 
-- ✅ **Filtros Dinâmicos**: Extrato agora filtra transações por mês e tipo (Receitas/Despesas)
-- ✅ **Orçamentos Fixos**: Todas as categorias de despesa aparecem fixas, permitindo edição rápida
-- ✅ **Próximos Pagamentos**: Filtrados automaticamente pelo mês atual do sistema
-- ✅ **Gestão de Contas**: CRUD completo - criar, editar e excluir contas bancárias
-- ✅ **Confirmações**: Diálogos de confirmação antes de marcar pagamentos como efetuados
-- ✅ **Formatação BR**: Datas exibidas no formato DD/MM/YYYY em todo o sistema
-- ✅ **Navegação Mensal**: Sistema mantém filtros ativos ao navegar entre meses
-- ✅ **Limpeza de Código**: Removidos códigos duplicados e não utilizados
-
 ### Versão 2.0 (19/11/2025)
 
-- ✅ Backend implementado em PHP seguindo MVC
-- ✅ Service Layer para lógica de negócio
-- ✅ Repository Pattern para acesso a dados
-- ✅ Exportação de dados (CSV/XLSX)
-
 **Próximas Etapas:**
-
-- Implementar frontend mobile nativo
-- Adicionar autenticação JWT
-- Middleware de segurança avançado
-- Notificações push para alertas de orçamento
-- Gráficos e análises avançadas
-- Backup automático de dados
-- Melhorias de performance e caching
 
 ---
 

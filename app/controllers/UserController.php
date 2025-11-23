@@ -4,10 +4,34 @@
 // Carregamos sob demanda dentro de exportarDados() para evitar erro fatal
 // quando a pasta vendor ainda não existe (antes de rodar `composer install`).
 
+
 require_once __DIR__ . '/../models/UserRepository.php';
+// Importações para exportação XLSX
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class UserController
 {
+    // GET /api/user/perfil?id_usuario=X
+    public function getPerfil()
+    {
+        $id_usuario = isset($_GET['id_usuario']) ? intval($_GET['id_usuario']) : 0;
+        if ($id_usuario <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID de usuário inválido']);
+            return;
+        }
+        $usuario = $this->userRepository->buscarPorId($id_usuario);
+        if (!$usuario) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Usuário não encontrado']);
+            return;
+        }
+        // Remover hash da senha do retorno
+        unset($usuario['senha_hash']);
+        http_response_code(200);
+        echo json_encode(['success' => true, 'usuario' => $usuario]);
+    }
     private $userRepository;
 
     public function __construct()
@@ -15,31 +39,55 @@ class UserController
         $this->userRepository = new UserRepository();
     }
 
-    // GET /api/user/perfil?id_usuario=X
-    public function getPerfil()
+    // POST /api/user/register
+    public function registerUser()
     {
-        $id_usuario = isset($_GET['id_usuario']) ? intval($_GET['id_usuario']) : 0;
+        $input = json_decode(file_get_contents('php://input'), true);
+        $nome = isset($input['nome']) ? trim($input['nome']) : '';
+        $email = isset($input['email']) ? trim($input['email']) : '';
+        $senha = isset($input['senha']) ? $input['senha'] : '';
 
-        if ($id_usuario <= 0) {
+        if (empty($nome) || empty($email) || empty($senha)) {
             http_response_code(400);
-            echo json_encode(['error' => 'ID de usuário inválido']);
+            echo json_encode(['success' => false, 'message' => 'Preencha todos os campos.']);
+            return;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'E-mail inválido.']);
+            return;
+        }
+        if (strlen($senha) < 6) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'A senha deve ter pelo menos 6 caracteres.']);
             return;
         }
 
-        $usuario = $this->userRepository->buscarPorId($id_usuario);
-
-        if (!$usuario) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Usuário não encontrado']);
+        // Verifica se já existe usuário com o mesmo e-mail
+        if ($this->userRepository->buscarPorEmail($email)) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'E-mail já cadastrado.']);
             return;
         }
 
-        // Remover senha do retorno
-        unset($usuario['senha_hash']);
-
-        http_response_code(200);
-        echo json_encode($usuario);
+        $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+        $criado = $this->userRepository->criarUsuario($nome, $email, $senha_hash);
+        if ($criado) {
+            // Buscar id_usuario recém-criado
+            $usuario = $this->userRepository->buscarPorEmail($email);
+            http_response_code(201);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Cadastro realizado com sucesso!',
+                'id_usuario' => $usuario ? $usuario['id_usuario'] : null
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Erro ao cadastrar usuário.']);
+        }
     }
+
+    // ...existing code...
 
     // PUT /api/user/perfil (atualizar nome e email)
     public function atualizarPerfil()
@@ -228,7 +276,7 @@ class UserController
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment; filename="lumis_export_' . $timestamp . '.xlsx"');
 
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $spreadsheet = new Spreadsheet();
 
             // Aba 1: Usuário
             $sheetUsuario = $spreadsheet->getActiveSheet();
@@ -306,7 +354,7 @@ class UserController
             $sheetTransacoes->setCellValue('B' . ($linha + 1), 'Lumis - Gestão Financeira Pessoal');
 
             // Salvar para output
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
             exit;
         }
