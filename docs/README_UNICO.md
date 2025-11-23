@@ -33,96 +33,102 @@ LumisApp é um sistema de gestão financeira pessoal, com backend em PHP (MVC + 
 ### Passos
 
 1. Clone o projeto para `C:\xampp\htdocs\LumisApp`
-2. **Habilite a extensão GD do PHP (necessária para exportação XLSX):**
+2. Instale dependências:
 
-- Abra o arquivo `C:\xampp\php\php.ini`.
-- Procure por `;extension=gd` e remova o ponto e vírgula, ficando `extension=gd`.
-- Salve o arquivo e reinicie o Apache pelo XAMPP.
+### Pré-requisitos
 
+- XAMPP (Apache + MySQL + PHP 8.2+)
+- Composer
+- Navegador moderno
+
+**Importante:**
+Para exportação de dados (XLSX/CSV) e funcionamento do pacote PhpSpreadsheet, habilite a extensão `zip` no PHP:
+
+1. Abra o arquivo `C:\xampp\php\php.ini`.
+2. Procure por `;extension=zip` e remova o ponto e vírgula, ficando `extension=zip`.
+3. Salve e reinicie o Apache pelo XAMPP.
+4. Só então rode `composer install`.
+
+### Passos
+
+1. Clone o projeto para `C:\xampp\htdocs\LumisApp`
+2. **Habilite a extensão zip no PHP** (veja instrução acima).
 3. Instale dependências:
 
-```bash
-cd C:\xampp\htdocs\LumisApp
-composer install
-```
 
-- Se aparecer erro relacionado à extensão GD, repita o passo 2.
+    ```bash
+    cd C:\xampp\htdocs\LumisApp
+    composer install
+    ```
 
 4. Configure o banco de dados:
 
-- Crie o banco `lumis` no phpMyAdmin
-- Importe `database/banco.sql` e (opcional) `database/dados_teste.sql`
+
+    - Crie o banco `lumis` no phpMyAdmin
+    - Importe `database/banco.sql` e (opcional) `database/dados_teste.sql`
 
 5. Edite `app/config/database.php` com suas credenciais
 6. Inicie o Apache pelo XAMPP
 7. Acesse:
 
-- Interface: `http://localhost/LumisApp/public/index.html`
-- API: `http://localhost/LumisApp/public/api.php/api/...`
 
----
+    - Interface: `http://localhost/LumisApp/public/index.html`
+    - API: `http://localhost/LumisApp/public/api.php/api/...`
 
-## 3. Estrutura de Pastas (MVC)
+│ ├── controllers/ # Controllers (MVC)
+│ │ ├── AuthController.php # Autenticação
+│ │ ├── CategoriaController.php # Gestão de categorias
+│ │ ├── ContaController.php # Gestão de contas
+│ │ ├── DashboardController.php # Dashboard/resumo
+│ │ ├── MetaFinanceiraController.php # Metas financeiras
+│ │ ├── OrcamentoController.php # Orçamentos
+│ │ ├── RelatorioController.php # Relatórios
+│ │ ├── TransacaoController.php # Transações
+│ │ └── UserController.php # Perfil de usuário
+│ ├── models/ # Models/Repositories (MVC)
+│ │ ├── CategoriaRepository.php
+│ │ ├── ContaRepository.php
+│ │ ├── MetaFinanceiraRepository.php
+│ │ ├── OrcamentoRepository.php
+│ │ ├── RelatorioRepository.php
+│ │ ├── TransacaoRepository.php
+│ │ └── UserRepository.php
+│ ├── routes/ # Rotas da API
+│ │ └── api.php # Definição centralizada de rotas
+│ └── services/ # Services (Lógica de Negócio)
+│ ├── DashboardService.php
+│ ├── MetaFinanceiraService.php
+│ ├── OrcamentoService.php
+│ └── SaldoService.php
+│
+├── 📁 public/ # ARQUIVOS PÚBLICOS (Ponto de Entrada)
+│ ├── api.php # Front Controller da API
+│ ├── index.html # Interface principal
+│ ├── .htaccess # Regras Apache
+│ ├── css/ # Estilos
+│ │ └── styles.css # Estilos principais
+│ ├── js/ # JavaScript
+│ │ ├── app.js # Lógica principal
+│ │ └── requests.js # Requisições HTTP
+│ └── assets/ # Recursos estáticos (imagens, etc)
+│
+├── 📁 database/ # BANCO DE DADOS
+│ ├── banco.sql # Schema do banco
+│ ├── dados_teste.sql # Dados para testes
+│ ├── Notas_Esquema_Financeiro.md # Documentação do schema
+│ └── README.md # Informações do banco
+│
+├── 📁 docs/ # DOCUMENTAÇÃO
+│ └── README_UNICO.md # Documentação unificada
+│
+├── 📁 vendor/ # DEPENDÊNCIAS (Composer)
+│ └── ... # PhpSpreadsheet e outras libs
+│
+├── 📄 composer.json # Configuração do Composer
+├── 📄 composer.lock # Lock de dependências
+├── 📄 .gitignore # Arquivos ignorados pelo Git
+└── 📄 prototipo.html # Protótipo inicial
 
-```
-LumisApp/
-│
-├── 📁 app/                           # NÚCLEO DA APLICAÇÃO
-│   ├── config/                       # Configurações
-│   │   └── database.php             # Conexão com banco de dados
-│   ├── controllers/                  # Controllers (MVC)
-│   │   ├── AuthController.php       # Autenticação
-│   │   ├── CategoriaController.php  # Gestão de categorias
-│   │   ├── ContaController.php      # Gestão de contas
-│   │   ├── DashboardController.php  # Dashboard/resumo
-│   │   ├── MetaFinanceiraController.php  # Metas financeiras
-│   │   ├── OrcamentoController.php  # Orçamentos
-│   │   ├── RelatorioController.php  # Relatórios
-│   │   ├── TransacaoController.php  # Transações
-│   │   └── UserController.php       # Perfil de usuário
-│   ├── models/                       # Models/Repositories (MVC)
-│   │   ├── CategoriaRepository.php
-│   │   ├── ContaRepository.php
-│   │   ├── MetaFinanceiraRepository.php
-│   │   ├── OrcamentoRepository.php
-│   │   ├── RelatorioRepository.php
-│   │   ├── TransacaoRepository.php
-│   │   └── UserRepository.php
-│   ├── routes/                       # Rotas da API
-│   │   └── api.php                  # Definição centralizada de rotas
-│   └── services/                     # Services (Lógica de Negócio)
-│       ├── DashboardService.php
-│       ├── MetaFinanceiraService.php
-│       ├── OrcamentoService.php
-│       └── SaldoService.php
-│
-├── 📁 public/                        # ARQUIVOS PÚBLICOS (Ponto de Entrada)
-│   ├── api.php                      # Front Controller da API
-│   ├── index.html                   # Interface principal
-│   ├── .htaccess                    # Regras Apache
-│   ├── css/                         # Estilos
-│   │   └── styles.css              # Estilos principais
-│   ├── js/                          # JavaScript
-│   │   ├── app.js                  # Lógica principal
-│   │   └── requests.js             # Requisições HTTP
-│   └── assets/                      # Recursos estáticos (imagens, etc)
-│
-├── 📁 database/                      # BANCO DE DADOS
-│   ├── banco.sql                    # Schema do banco
-│   ├── dados_teste.sql              # Dados para testes
-│   ├── Notas_Esquema_Financeiro.md  # Documentação do schema
-│   └── README.md                    # Informações do banco
-│
-├── 📁 docs/                          # DOCUMENTAÇÃO
-│   └── README_UNICO.md              # Documentação unificada
-│
-├── 📁 vendor/                        # DEPENDÊNCIAS (Composer)
-│   └── ...                          # PhpSpreadsheet e outras libs
-│
-├── 📄 composer.json                  # Configuração do Composer
-├── 📄 composer.lock                  # Lock de dependências
-├── 📄 .gitignore                     # Arquivos ignorados pelo Git
-└── 📄 prototipo.html                 # Protótipo inicial
 ```
 
 ---
@@ -141,23 +147,27 @@ LumisApp/
 **❌ ANTES (Estrutura Antiga):**
 
 ```
+
 LumisApp/
-├── api/              # Duplicado
-├── view/             # Duplicado
-├── db/               # Duplicado
-└── *.md (na raiz)    # Desorganizado
+├── api/ # Duplicado
+├── view/ # Duplicado
+├── db/ # Duplicado
+└── \*.md (na raiz) # Desorganizado
+
 ```
 
 **✅ AGORA (Estrutura MVC):**
 
 ```
+
 LumisApp/
-├── app/              # Lógica centralizada
-├── public/           # Interface pública
-├── database/         # SQL organizado
-├── docs/             # Docs separadas
-└── README_UNICO.md   # Limpo e claro
-```
+├── app/ # Lógica centralizada
+├── public/ # Interface pública
+├── database/ # SQL organizado
+├── docs/ # Docs separadas
+└── README_UNICO.md # Limpo e claro
+
+````
 
 ---
 
@@ -279,7 +289,7 @@ Consulte a seção abaixo para detalhes completos de cada endpoint e exemplos de
   "senha_hash": "string(255)",
   "data_criacao": "timestamp"
 }
-```
+````
 
 ### Conta
 
