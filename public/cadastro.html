@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criar Conta - LumisApp</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#7C3AED">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
     <link rel="stylesheet" href="css/cadastro.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
@@ -30,12 +37,19 @@
                 </div>
                 <div class="input-group">
                     <label for="senha">Senha</label>
-                    <input type="password" id="senha" name="senha" required autocomplete="new-password">
+                    <div class="password-wrapper">
+                        <input type="password" id="senha" name="senha" required autocomplete="new-password">
+                        <i class="fa-solid fa-eye password-toggle" onclick="togglePasswordVisibility('senha')"></i>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="confirmarSenha">Confirmar senha</label>
-                    <input type="password" id="confirmarSenha" name="confirmarSenha" required
-                        autocomplete="new-password">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmarSenha" name="confirmarSenha" required
+                            autocomplete="new-password">
+                        <i class="fa-solid fa-eye password-toggle"
+                            onclick="togglePasswordVisibility('confirmarSenha')"></i>
+                    </div>
                 </div>
                 <button type="submit" class="btn-cadastro">Cadastrar</button>
             </form>

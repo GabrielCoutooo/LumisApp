@@ -25,11 +25,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     try {
-      const response = await fetch("/LumisApp/public/api/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, senha }),
-      });
+      const response = await fetch(
+        "https://api.lumisapp.me/public/api.php/api/user/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome, email, senha }),
+        }
+      );
       const data = await response.json();
       if (response.ok && data.success) {
         alert("Cadastro realizado com sucesso!");
@@ -47,3 +50,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  const icon = input.nextElementSibling;
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.classList.remove("fa-eye");
+    icon.classList.add("fa-eye-slash");
+  } else {
+    input.type = "password";
+    icon.classList.remove("fa-eye-slash");
+    icon.classList.add("fa-eye");
+  }
+}

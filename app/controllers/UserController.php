@@ -231,6 +231,41 @@ class UserController
         }
     }
 
+    // POST /api/user/recuperar-senha
+    public function recuperarSenha()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $email = isset($input['email']) ? trim($input['email']) : '';
+
+        if (empty($email)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Email é obrigatório']);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Email inválido']);
+            return;
+        }
+
+        // Verificar se o email existe
+        $usuario = $this->userRepository->buscarPorEmail($email);
+        if (!$usuario) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Email não encontrado']);
+            return;
+        }
+
+        // TODO: Implementar envio de email com token de recuperação
+        // Por enquanto, retorna sucesso simulado
+        http_response_code(200);
+        echo json_encode([
+            'success' => true,
+            'message' => 'Instruções de recuperação enviadas para o email cadastrado'
+        ]);
+    }
+
     // GET /api/user/exportar?id_usuario=X&formato=xlsx  (ou formato=csv)
     public function exportarDados()
     {

@@ -1,0 +1,18 @@
+# /var/www/html/LumisApp/.htaccess
+# Arquivo .htaccess na RAIZ DO PROJETO
+
+<IfModule mod_rewrite.c>
+    # 1. Ativa o módulo de reescrita
+    RewriteEngine On
+    RewriteBase / 
+    
+    # 2. Se a requisição for para a API, roteie para public/yapi.php
+    # Ele pega qualquer URL que comece com "api/" e a envia para public/yapi.php
+    RewriteRule ^api/(.*)$ public/yapi.php/$1 [L,QSA]
+
+    # 3. Se a requisição não for API e não for um arquivo/diretório existente,
+    # ele procura pelo arquivo dentro de public/ (Isso é para index.html e assets)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

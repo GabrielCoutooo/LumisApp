@@ -81,6 +81,9 @@ $routes = [
     '/api/user/exportar' => [
         'GET' => ['controller' => 'UserController', 'method' => 'exportarDados']
     ],
+    '/api/user/recuperar-senha' => [
+        'POST' => ['controller' => 'UserController', 'method' => 'recuperarSenha']
+    ],
     '/api/extrato' => [
         'GET' => ['controller' => 'TransacaoController', 'method' => 'extrato']
     ],

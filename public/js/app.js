@@ -2,7 +2,8 @@
 // Lumis - Sistema de Gestão Financeira - JavaScript
 
 // Configuração da API
-const BASE_API = "http://192.168.15.16/LumisApp/public/api.php"; // Troque pelo seu IPv4 interno
+const BASE_API = "https://api.lumisapp.me";
+
 let ID_USUARIO = localStorage.getItem("id_usuario")
   ? Number(localStorage.getItem("id_usuario"))
   : null;
@@ -171,7 +172,7 @@ window.voltarMesAtual = voltarMesAtual;
 function logoutUsuario() {
   localStorage.clear();
   sessionStorage.clear();
-  window.location.href = "/LumisApp/public/login.html";
+  window.location.href = "login.html";
 }
 window.logoutUsuario = logoutUsuario;
 // ==================== PRIVACIDADE ====================
@@ -1264,11 +1265,12 @@ async function carregarConfiguracoesIniciais() {
     const dados = await resposta.json();
     if (!resposta.ok) return;
 
-    const ocultarSaldoPorPadrao = !!dados.config_saldo_oculto;
+    const usuario = dados.usuario || {};
+    const ocultarSaldoPorPadrao = !!usuario.config_saldo_oculto;
     saldoVisivel = !ocultarSaldoPorPadrao;
 
     // Moeda preferida do usuário
-    const moeda = dados.config_moeda || BASE_CURRENCY;
+    const moeda = usuario.config_moeda || BASE_CURRENCY;
     await setCurrency(moeda);
 
     // Atualiza ícone do botão de privacidade imediatamente
@@ -1712,7 +1714,7 @@ async function confirmarExclusaoConta() {
 
 async function exportarDados() {
   try {
-    const url = `${BASE_API}/user/exportar?id_usuario=${ID_USUARIO}&formato=xlsx`;
+    const url = `${BASE_API}/api/user/exportar?id_usuario=${ID_USUARIO}&formato=xlsx`;
     window.open(url, "_blank");
     mostrarNotificacao(
       "info",
@@ -1800,7 +1802,7 @@ function abrirFormNovaConta() {
   document.getElementById("hidden-id-conta").value = "";
   document.getElementById("input-conta-nome").value = "";
   document.getElementById("select-conta-tipo").value = "CORRENTE";
-  document.getElementById("input-conta-saldo").value = "0";
+  document.getElementById("input-conta-saldo").value = "0.00";
   document.getElementById("input-conta-exibir").checked = true;
   const btnDeletar = document.getElementById("btn-deletar-conta");
   if (btnDeletar) btnDeletar.style.display = "none";
@@ -2454,5 +2456,223 @@ async function marcarComoEfetuada(idTransacao) {
   } catch (e) {
     console.error("Erro ao marcar como efetuada:", e);
     mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+// ==================== CONTAS (GERENCIAR / CRUD) - C/U/D ====================
+
+// --- Funções do Modal de Formulário ---
+function abrirFormNovaConta() {
+  document.getElementById("modal-form-conta").style.display = "flex";
+  document.getElementById("conta-modal-title").textContent = "Nova Conta";
+  // Limpar e definir padrões
+  document.getElementById("hidden-id-conta").value = "";
+  document.getElementById("input-conta-nome").value = "";
+  document.getElementById("select-conta-tipo").value = "CORRENTE";
+  document.getElementById("input-conta-saldo").value = "0.00";
+  document.getElementById("input-conta-exibir").checked = true;
+  const btnDeletar = document.getElementById("btn-deletar-conta");
+  if (btnDeletar) btnDeletar.style.display = "none";
+}
+
+function editarConta(idConta) {
+  const conta = contasUsuario.find((c) => c.id_conta === idConta);
+  if (!conta) {
+    mostrarNotificacao("danger", "Erro", "Conta não encontrada.");
+    return;
+  }
+  document.getElementById("modal-form-conta").style.display = "flex";
+  document.getElementById("conta-modal-title").textContent = "Editar Conta";
+  // Preencher campos com dados da conta
+  document.getElementById("hidden-id-conta").value = conta.id_conta;
+  document.getElementById("input-conta-nome").value = conta.nome;
+  document.getElementById("select-conta-tipo").value = conta.tipo_conta;
+  document.getElementById("input-conta-saldo").value = parseFloat(
+    conta.saldo_inicial || 0
+  );
+  document.getElementById("input-conta-exibir").checked =
+    conta.exibir_no_dashboard == 1;
+  const btnDeletar = document.getElementById("btn-deletar-conta");
+  if (btnDeletar) btnDeletar.style.display = "flex";
+}
+
+function fecharFormConta() {
+  document.getElementById("modal-form-conta").style.display = "none";
+}
+
+// --- Funções de API (Salvar/Editar) ---
+async function salvarConta() {
+  const id_conta = document.getElementById("hidden-id-conta").value;
+  const nome = document.getElementById("input-conta-nome").value.trim();
+  const tipo_conta = document.getElementById("select-conta-tipo").value;
+  const saldo_inicial = parseFloat(
+    document.getElementById("input-conta-saldo").value || 0
+  );
+  const exibir_no_dashboard = document.getElementById("input-conta-exibir")
+    .checked
+    ? 1
+    : 0;
+  if (!nome || isNaN(saldo_inicial) || saldo_inicial < 0) {
+    mostrarNotificacao(
+      "warning",
+      "Atenção",
+      "O nome e o saldo inicial (>= 0) são obrigatórios."
+    );
+    return;
+  }
+  const mode = id_conta ? "edit" : "create";
+  const method = mode === "edit" ? "PUT" : "POST";
+  const endpoint = BASE_API + "/api/contas";
+  const payload = {
+    id_usuario: ID_USUARIO,
+    nome: nome,
+    tipo_conta: tipo_conta,
+    saldo_inicial: saldo_inicial,
+    exibir_no_dashboard: exibir_no_dashboard,
+  };
+  if (mode === "edit") {
+    payload.id_conta = Number(id_conta);
+  }
+  try {
+    const res = await fetch(endpoint, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(
+        data.error
+          ? data.error
+          : "Falha ao " + (mode === "edit" ? "editar" : "criar") + " conta."
+      );
+    }
+    mostrarNotificacao(
+      "success",
+      "Sucesso!",
+      "Conta " + nome + " salva com sucesso."
+    );
+    fecharFormConta();
+    carregarContasGerenciar();
+    carregarDashboard();
+  } catch (e) {
+    console.error("Erro ao salvar conta:", e);
+    mostrarNotificacao("danger", "Erro", e.message);
+  }
+}
+window.salvarConta = salvarConta;
+
+// --- Funções de Exclusão (DELETE) ---
+function confirmarExclusaoConta() {
+  const id_conta = document.getElementById("hidden-id-conta").value;
+  const nome = document.getElementById("input-conta-nome").value;
+  if (
+    !confirm(
+      "Tem certeza que deseja EXCLUIR a conta '" +
+        nome +
+        "'? Se houver transações vinculadas, a exclusão falhará."
+    )
+  ) {
+    return;
+  }
+  excluirConta(id_conta);
+}
+
+function excluirContaComConfirmacao(idConta, nomeConta) {
+  if (!confirm('Tem certeza que deseja excluir a conta "' + nomeConta + '"?')) {
+    return;
+  }
+  excluirConta(idConta);
+}
+
+async function excluirConta(idConta) {
+  try {
+    const resposta = await fetch(BASE_API + "/api/contas", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_conta: Number(idConta) }),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      if (
+        dados.error &&
+        (dados.error.includes("Integrity constraint") ||
+          dados.error.includes("vinculada"))
+      ) {
+        throw new Error(
+          "Não é possível excluir. A conta está vinculada a transações."
+        );
+      }
+      throw new Error(dados.error || "Erro desconhecido ao excluir.");
+    }
+    mostrarNotificacao(
+      "success",
+      "Excluída!",
+      "Conta removida com sucesso.",
+      4000
+    );
+    fecharFormConta();
+    carregarContasGerenciar();
+    carregarDashboard();
+  } catch (error) {
+    console.error("Erro ao excluir conta:", error);
+    mostrarNotificacao("danger", "Erro de Exclusão", error.message);
+  }
+}
+window.excluirContaComConfirmacao = excluirContaComConfirmacao;
+
+// --- Correção/Atualização da função de renderização ---
+async function carregarContasGerenciar() {
+  const lista = document.getElementById("lista-contas-gerenciar");
+  lista.innerHTML =
+    '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  try {
+    const resposta = await fetch(
+      `${BASE_API}/api/contas?id_usuario=${ID_USUARIO}`
+    );
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.error);
+    contasUsuario = dados;
+    if (!dados.length) {
+      lista.innerHTML =
+        '<div class="empty-state">Nenhuma conta cadastrada</div>';
+      return;
+    }
+    lista.innerHTML = dados
+      .map(function (c) {
+        return (
+          '<div class="conta-item" style="display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f9fa;border-radius:8px;margin-bottom:10px;" onclick="editarConta(' +
+          c.id_conta +
+          ')">' +
+          "<div>" +
+          '<div style="font-weight:600;margin-bottom:5px;">' +
+          c.nome +
+          "</div>" +
+          '<div style="font-size:12px;color:#666;">Tipo: ' +
+          c.tipo_conta +
+          " | Saldo: " +
+          formatarMoeda(c.saldo_inicial || 0) +
+          "</div>" +
+          "</div>" +
+          '<div style="display:flex;gap:8px;">' +
+          '<button class="btn" style="padding:6px 12px;" onclick="event.stopPropagation(); editarConta(' +
+          c.id_conta +
+          ')">' +
+          '<i class="fa-solid fa-edit"></i> Editar' +
+          "</button>" +
+          '<button class="btn btn-danger" style="padding:6px 12px;" onclick="event.stopPropagation(); excluirContaComConfirmacao(' +
+          c.id_conta +
+          ", '" +
+          c.nome.replace(/'/g, "\\'") +
+          "')\">" +
+          '<i class="fa-solid fa-trash"></i> Excluir' +
+          "</button>" +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+  } catch (error) {
+    console.error("Erro ao carregar contas:", error);
+    lista.innerHTML = '<div class="empty-state">Erro ao carregar contas</div>';
   }
 }

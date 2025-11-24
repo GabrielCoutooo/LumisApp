@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LumisApp</string>
+    <string name="title_activity_main">LumisApp</string>
+    <string name="package_name">com.gabrielcouto.lumis</string>
+    <string name="custom_url_scheme">com.gabrielcouto.lumis</string>
+</resources>

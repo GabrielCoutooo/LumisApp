@@ -1,6 +1,16 @@
 # Dependências
 /vendor/
 composer.phar
+node_modules/
+
+# Android Build
+android/build/
+android/app/build/
+android/.gradle/
+android/gradlew.bat
+android/local.properties
+*.apk
+*.aab
 
 # Configurações locais
 /app/config/database.php
