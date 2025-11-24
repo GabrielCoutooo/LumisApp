@@ -136,6 +136,7 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #CBD5E1;
     color: #1F2937;
+    overflow-x: hidden;
 }
 
 /* Container Mobile */
@@ -144,8 +145,20 @@ body {
     margin: 0 auto;
     background: white;
     min-height: 100vh;
+    min-height: -webkit-fill-available;
     position: relative;
     box-shadow: 0 0 140px rgba(0, 0, 0, 0.28), 0 25px 70px rgba(0, 0, 0, 0.22);
+    overflow-x: hidden;
+}
+
+/* Ensure proper viewport height on mobile */
+html {
+    height: -webkit-fill-available;
+}
+
+body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
 }
 
 /* Toast Notification */
@@ -290,7 +303,14 @@ body {
 /* Main Content */
 .content {
     padding: 20px;
-    padding-bottom: 100px;
+    padding-bottom: 90px;
+}
+
+/* Add extra padding for devices with safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .content {
+        padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    }
 }
 
 /* Card Saldo Total */
@@ -488,19 +508,32 @@ body {
     border-top: 1px solid #F3F4F6;
     display: flex;
     justify-content: space-around;
-    padding: 12px 0;
+    align-items: center;
+    padding: 8px 4px 8px;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    min-height: 68px;
+    z-index: 100;
+}
+
+/* Add padding-bottom safe area for devices with notch/home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
 }
 
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 2px;
     cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 12px;
+    padding: 6px 8px;
+    border-radius: 10px;
     transition: all 0.3s;
+    flex: 1;
+    max-width: 80px;
 }
 
 .nav-item:hover {
@@ -514,16 +547,18 @@ body {
 .nav-item.highlight {
     background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
     color: white;
-    transform: scale(1.1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .nav-icon {
-    font-size: 24px;
+    font-size: 22px;
 }
 
 .nav-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 /* Telas */
@@ -1175,11 +1210,55 @@ input:checked + .slider:before {
 [data-theme="dark"] .pagamento-desc { color: #E5E7EB; }
 
 [data-theme="dark"] .progress-bar { background: #1F2937; }
-
 [data-theme="dark"] .bottom-nav {
     background: #0F172A;
     border-top: 1px solid #1F2937;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] .nav-item:hover { background: #1F2937; }
+
+/* Additional responsiveness for smaller screens */
+@media screen and (max-width: 380px) {
+    .nav-item {
+        padding: 4px 6px;
+        gap: 1px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+    }
+    
+    .nav-label {
+        font-size: 9px;
+    }
+    
+    .bottom-nav {
+        padding: 6px 2px 6px;
+        min-height: 64px;
+    }
+    
+    .nav-item.highlight {
+        transform: scale(1.03);
+    }
+}
+
+/* For very small screens */
+@media screen and (max-width: 340px) {
+    .nav-label {
+        display: none;
+    }
+    
+    .nav-item {
+        padding: 8px 4px;
+    }
+    
+    .nav-icon {
+        font-size: 24px;
+    }
+    
+    .bottom-nav {
+        min-height: 56px;
+    }
 }
 [data-theme="dark"] .nav-item:hover { background: #1F2937; }
 
